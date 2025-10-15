@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>PCD Lucky Wheel · 中英雙語</title>
+<style>
+  :root{
+    --purple:#5a2463;
+    --ring:#eadcf2;
+    --shadow:0 20px 60px rgba(90,36,99,.16);
+    --btn1:#f7d7ff; --btn2:#ffd6d6;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Helvetica,Arial,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(1200px 1200px at 50% -200px,#ffeefe 0,#fff 60%);
+    color:#2b2b2b; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .card{width:min(720px,100%);background:var(--card);border-radius:22px;box-shadow:var(--shadow);padding:22px 22px 26px;border:1px solid #f0e6f5;}
+  .wheel-wrap{position:relative;width:100%;aspect-ratio:1/1;display:grid;place-items:center;}
+  canvas{width:100%;height:auto;display:block;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 14px var(--ring),inset 0 0 0 1px #e9e9f6;}
+  .hub{position:absolute;width:22%;aspect-ratio:1/1;border-radius:50%;display:grid;place-items:center;background:#fff;box-shadow:0 6px 16px rgba(90,36,99,.18);border:12px solid var(--purple);}
+  .ctr-pointer{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:22px solid var(--purple);filter:drop-shadow(0 2px 0 rgba(0,0,0,.06));}
+  .actions{display:flex;gap:14px;margin-top:18px;flex-wrap:wrap}
+  .btn{flex:1 1 180px;padding:14px 16px;font-weight:700;border-radius:18px;border:1px solid #f1e6f5;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;user-select:none;background:#fff;}
+  .btn-primary{background:linear-gradient(180deg,var(--btn1),var(--btn2));color:#5a2a62;}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .pill{margin-top:14px;height:46px;display:flex;gap:14px;flex-wrap:wrap}
+  .chip{flex:1 1 220px;background:#fff;border:1px solid #eee4f4;border-radius:16px;display:flex;align-items:center;gap:10px;padding:10px 14px;box-shadow:0 8px 20px rgba(90,36,99,.06);}
+  .muted{color:#666}
+  .rule{margin:14px 0 0;text-align:center;line-height:1.55;color:#575757;}
+  .rule small{display:block;color:#8a8a8a}
+  .state{margin-top:10px;text-align:center;color:#7a7a7a;font-size:14px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="wheel-wrap">
+    <canvas id="wheel"></canvas>
+    <div class="hub"><div class="ctr-pointer" aria-hidden="true"></div></div>
+  </div>
+  <div class="actions"><button id="startBtn" class="btn btn-primary">开始 / Start</button></div>
+  <div class="pill">
+    <button id="subBtn" class="chip">✅ 订阅 PCD / Subscribe PCD</button>
+    <button id="shareBtn" class="chip">🔗 分享 / Share</button>
+  </div>
+  <div class="rule">
+    🌟 每人每周 1 次；完成 订阅 + 分享 再 +1 次（Weekly 1 spin; +1 bonus after subscribing + sharing）
+    <small>Weekly allowance and states auto-reset every week.（每周自动重置）</small>
+  </div>
+  <div class="state">已用/可用次數、订阅/分享状态（✅/❌）</div>
+</div>
+<script>
+// 簡化示例版（展示外觀、動畫與指針位置，非完整商用邏輯）
+const cvs=document.getElementById('wheel'),ctx=cvs.getContext('2d');let size;
+function resize(){const s=cvs.clientWidth*window.devicePixelRatio;cvs.width=cvs.height=s;size=s;draw(0);}window.onresize=resize;
+const prizes=["45/60 | 10 off","😢 sorry","45/60 | 20 off","😢 sorry","45/60 | 40 off","😢 sorry","45/60 | 20 off","😢 sorry"];
+function draw(a){const n=8,r=size/2-20;ctx.clearRect(0,0,size,size);ctx.save();ctx.translate(r+20,r+20);ctx.rotate(a*Math.PI/180);const seg=2*Math.PI/n;for(let i=0;i<n;i++){ctx.beginPath();ctx.fillStyle=["#f8b6c2","#a8df9b","#cbd8ff","#ffb1bb","#a7d1ff","#ffe38f","#cbd8ff","#f8b6c2"][i];ctx.moveTo(0,0);ctx.arc(0,0,r,seg*i,seg*(i+1));ctx.fill();ctx.save();ctx.rotate(seg*i+seg/2);ctx.textAlign="center";ctx.fillStyle="#333";ctx.font=size*0.04+"px sans-serif";ctx.fillText(prizes[i],r*0.6,0);ctx.restore();}ctx.restore();}
+resize();
+let spinning=false,angle=0;document.getElementById('startBtn').onclick=()=>{if(spinning)return;spinning=true;const end=angle+360*4+Math.random()*360;const start=angle,t0=performance.now(),dur=4000;(function anim(t){const p=Math.min(1,(t-t0)/dur);angle=start+(end-start)*(1-Math.pow(1-p,3));draw(angle);if(p<1)requestAnimationFrame(anim);else{spinning=false;alert("🎉 恭喜中奖 / Congratulations!");}})(t0);};
+</script>
+</body>
+</html>

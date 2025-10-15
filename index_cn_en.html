@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PCD Lucky Wheel — CN/EN</title>
+<style>
+  :root{
+    --brand:#6e2b74;        /* 指针/强调 紫 */
+    --ring:#eadcf3;         /* 外圈浅紫 */
+    --card:#ffffff;
+    --bg1:#fbf1ff;
+    --grad1:#f7d1ff;
+    --grad2:#ffd1d1;
+    --shadow:0 8px 30px rgba(0,0,0,.08);
+    --text:#2b2b2b;
+    --muted:#7d7d7d;
+    --ok:#11a36a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    display:flex;align-items:center;justify-content:center;min-height:100vh;
+    background:radial-gradient(1200px 600px at 50% -200px,var(--bg1),#fff);
+    font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,PingFang SC,Hiragino Sans GB,Microsoft YaHei,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
+    color:var(--text);
+  }
+  .card{
+    width:min(680px,96vw);
+    background:var(--card);border-radius:28px;padding:22px 20px 26px;
+    box-shadow:var(--shadow);
+  }
+  .stage{
+    position:relative;background:#fff;border-radius:22px;padding:18px;
+    box-shadow:inset 0 0 0 2px #f2e9f7;
+  }
+  .wheelWrap{position:relative; width:100%; aspect-ratio:1/1;}
+  canvas{width:100%;height:100%;display:block; border-radius:50%;
+    box-shadow:inset 0 0 0 14px var(--ring), inset 0 0 0 3px #fff;}
+  /* center pointer (triangle up inside white circle) */
+  .center-pointer{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:22%;aspect-ratio:1/1;border-radius:50%;
+    background:radial-gradient(circle at 50% 50%, #fff 35%, #ffffff 36%, var(--brand) 36%, var(--brand) 100%);
+    display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 6px 10px rgba(0,0,0,.12));
+  }
+  .center-pointer:before{
+    content:"";width:0;height:0;position:absolute;top:6.5%;
+    left:50%;transform:translate(-50%, -50%);
+    border-left:12px solid transparent;border-right:12px solid transparent;
+    border-bottom:18px solid var(--brand); /* 小三角朝上 */
+  }
+  .actions{display:flex;gap:14px;justify-content:center;margin:18px 0 8px}
+  .btn{
+    padding:14px 24px;border-radius:18px;border:0;cursor:pointer;
+    background:linear-gradient(180deg,#f7d1ff,#ffc2c2);
+    color:#632d79;font-weight:700;font-size:20px;box-shadow:var(--shadow);
+  }
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .chipRow{display:flex;gap:14px;justify-content:center;margin:8px 0 10px}
+  .chip{
+    display:flex;align-items:center;gap:10px;border-radius:16px;padding:12px 16px;
+    background:#fff;box-shadow:var(--shadow);color:#3b3b3b;font-weight:600;
+  }
+  .chip .dot{font-size:20px}
+  .muted{color:var(--muted); text-align:center; font-size:14px;line-height:1.6}
+  .rule{margin-top:6px}
+  .status{margin-top:8px}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="stage">
+      <div class="wheelWrap">
+        <canvas id="wheel"></canvas>
+        <div class="center-pointer" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="startBtn" class="btn">开始 / Start</button>
+    </div>
+
+    <div class="chipRow">
+      <button id="subBtn" class="chip"><span class="dot">✅</span><span>订阅 PCD / Subscribe PCD</span></button>
+      <button id="shareBtn" class="chip"><span class="dot">🔗</span><span>分享 / Share</span></button>
+    </div>
+
+    <div class="muted rule">
+      🌟 每人每周 1 次；完成 订阅 + 分享 再 +1 次<br/>
+      (Weekly 1 spin; +1 bonus after subscribing + sharing)
+    </div>
+    <div id="status" class="muted status"></div>
+  </div>
+
+<script>
+(() => {
+  const prizes = [
+    "1 😢 sorry",
+    "45⏰ or 60⏰ / 10 off",
+    "3 😢 sorry",
+    "45⏰ or 60⏰ / 20 off",
+    "8 😢 sorry",
+    "45⏰ or 60⏰ / 40 off",
+    "5 😢 sorry",
+    "45⏰ or 60⏰ / 10 off"
+  ];
+  const segColors = ["#cde","#ffd7d7","#cfe9ff","#ffd7a8","#d7d0ff","#cde","#ffd7d7","#cfe9ff"];
+  const n = prizes.length;
+  const wheel = document.getElementById('wheel');
+  const ctx = wheel.getContext('2d');
+
+  // Sizing
+  const DPR = Math.max(2, window.devicePixelRatio || 1);
+  const size = 640; wheel.width = size * DPR; wheel.height = size * DPR;
+  const W = wheel.width, H = wheel.height, R = Math.min(W, H)/2 * 0.82;
+  const CX = W/2, CY = H/2;
+  const segmentAngle = 2*Math.PI / n;
+  let currentRotation = 0; // radians
+
+  function drawWheel(){
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(currentRotation);
+    // Draw segments starting from top (pointer up) -> align segment 0 center to top by rotating -segAngle/2 during draw
+    ctx.rotate(-Math.PI/2); // 12 o'clock as zero angle
+    for(let i=0;i<n;i++){
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.fillStyle = segColors[i%segColors.length];
+      ctx.arc(0,0,R, i*segmentAngle, (i+1)*segmentAngle);
+      ctx.closePath(); ctx.fill();
+
+      // Text
+      ctx.save();
+      ctx.rotate(i*segmentAngle + segmentAngle/2);
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#2b2b2b";
+      ctx.font = `${22*DPR}px Arial`;
+      ctx.translate(R*0.68,0);
+      ctx.rotate(Math.PI/2);
+      wrapText(ctx, prizes[i], 0, 0, R*0.42, 26*DPR);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function wrapText(ctx,text,x,y,maxWidth,lineHeight){
+    const words = text.split(' ');
+    let line = '', yy = y;
+    for(let n=0;n<words.length;n++){
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      const w = metrics.width;
+      if (w > maxWidth && n>0){
+        ctx.fillText(line,x,yy);
+        line = words[n] + ' ';
+        yy += lineHeight;
+      }else{
+        line = testLine;
+      }
+    }
+    ctx.fillText(line,x,yy);
+  }
+
+  // Spin logic
+  let spinning = false;
+  function spin(){
+    if(spinning) return;
+    if(getRemaining()<=0){ alert("本周已用完 / Weekly allowance used up"); return; }
+    spinning = true;
+    startBtn.disabled = true;
+
+    const targetIndex = Math.floor(Math.random()*n);
+    // We want pointer at top. The wheel must stop so that targetIndex center lands at -90deg (top).
+    const targetAngle = -Math.PI/2 - (targetIndex*segmentAngle + segmentAngle/2);
+    const extra = (Math.PI*2) * 6; // extra spins
+    const finalRot = normalize(currentRotation + extra + shortestDelta(currentRotation, targetAngle));
+    const start = performance.now();
+    const D = 4200; // duration ms
+    (function animate(t0){
+      const p = Math.min(1,(t0-start)/D);
+      const ease = 1 - Math.pow(1-p,3);
+      const rot = currentRotation + (finalRot-currentRotation)*ease;
+      currentRotation = rot;
+      drawWheel();
+      if(p<1){ requestAnimationFrame(animate); }
+      else{
+        currentRotation = normalize(finalRot);
+        drawWheel();
+        const idx = getIndexByRotation(currentRotation);
+        finish(prizes[idx], idx);
+      }
+    })(start);
+  }
+
+  function shortestDelta(from, to){
+    let d = to - (from % (2*Math.PI));
+    if(d > Math.PI) d -= 2*Math.PI;
+    if(d < -Math.PI) d += 2*Math.PI;
+    return d;
+  }
+  function normalize(a){
+    a = a % (2*Math.PI);
+    if(a<0) a += 2*Math.PI;
+    return a;
+  }
+  // Given currentRotation, compute index the pointer tip (12 o'clock) points to
+  function getIndexByRotation(rot){
+    // convert rotation to angle where 0 at 12 o'clock
+    const a = normalize(rot);
+    // pointer at 12 o'clock -> the wheel's top corresponds to angle 'a'
+    const topAngle = a;
+    // Which segment center lies at -topAngle?
+    let idx = Math.floor( ( (2*Math.PI - (topAngle)) / segmentAngle ) ) % n;
+    return idx;
+  }
+
+  // State & weekly allowance
+  const TG = window.Telegram && Telegram.WebApp ? Telegram.WebApp : null;
+  if(TG){ TG.expand(); TG.ready(); }
+  const KEY = "pcd_wheel_cn_en_v1";
+  function weekKey(){
+    const d = new Date();
+    // Week starting Monday: get Monday date string
+    const day = d.getDay(); // 0-6 Sun-Sat
+    const diff = (day===0? -6:1-day);
+    const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate()+diff);
+    return monday.toISOString().slice(0,10);
+  }
+  function loadState(){
+    const raw = JSON.parse(localStorage.getItem(KEY)||"{}");
+    const nowKey = weekKey();
+    if(raw.week!==nowKey){
+      return {week:nowKey, used:0, bonus:0, subscribed:false, shared:false};
+    }
+    return raw;
+  }
+  function saveState(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+  let state = loadState();
+
+  function getAllowance(){
+    return 1 + (state.subscribed && state.shared ? 1 : 0);
+  }
+  function getRemaining(){ return Math.max(0, getAllowance() - state.used); }
+
+  function updateStatus(){
+    const used = state.used, allow = getAllowance();
+    const sub = state.subscribed ? "✅" : "❌";
+    const shr = state.shared ? "✅" : "❌";
+    status.innerHTML = `
+      本週可用：${allow} 次（已用 ${used}）· 訂閱/分享：${sub}/${shr}<br/>
+      Weekly allowance: ${allow} (used ${used}) · subscribe/share: ${sub}/${shr}
+    `;
+  }
+
+  function finish(text, index){
+    state.used = (state.used||0) + 1;
+    saveState(state);
+    updateStatus();
+    alert("🎉 恭喜中奖！ / 🎉 Congratulations!\n\n" + prizes[index]);
+    if(TG){
+      const payload = {
+        result: prizes[index],
+        index,
+        used: state.used,
+        allowance: getAllowance(),
+        subscribed: state.subscribed,
+        shared: state.shared
+      };
+      try{ TG.sendData(JSON.stringify(payload)); }catch(e){}
+    }
+    startBtn.disabled = getRemaining()<=0;
+  }
+
+  // Buttons
+  const startBtn = document.getElementById('startBtn');
+  const subBtn = document.getElementById('subBtn');
+  const shareBtn = document.getElementById('shareBtn');
+
+  startBtn.addEventListener('click', spin);
+
+  subBtn.addEventListener('click', () => {
+    window.open('https://t.me/pcatdolls', '_blank');
+    state.subscribed = true; saveState(state); updateStatus();
+    startBtn.disabled = getRemaining()<=0;
+  });
+
+  shareBtn.addEventListener('click', async () => {
+    const shareData = {
+      title: 'PCD Lucky Wheel',
+      text: '来抽奖！/ Try your luck!',
+      url: location.href
+    };
+    try{
+      if(navigator.share){ await navigator.share(shareData); }
+      else{ window.open(`https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(shareData.text)}`,'_blank'); }
+      state.shared = true; saveState(state); updateStatus();
+      startBtn.disabled = getRemaining()<=0;
+    }catch(e){ /* user cancelled */ }
+  });
+
+  // Init
+  drawWheel();
+  updateStatus();
+  startBtn.disabled = getRemaining()<=0;
+  window.addEventListener('resize', () => {
+    // (for simplicity this demo keeps canvas static size)
+  });
+})();
+</script>
+</body>
+</html>
