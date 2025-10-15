@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PCD Lucky Wheel · 双语 Bilingual</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<style>
+  :root{
+    --purple:#6F2B6E;
+    --ring:#E9DBF6;
+    --bg:#fff7ff;
+    --btn-grad-1:#EEC1FF;
+    --btn-grad-2:#FFB6C1;
+    --seg-a:#FFD1DC;
+    --seg-b:#CFE0FF;
+    --seg-c:#BDECC6;
+    --seg-d:#FFF1A8;
+  }
+  html,body{height:100%;margin:0}
+  body{
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(1200px 800px at 50% -300px,#ffeefe 0%,#fff 70%);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Noto Sans SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+    color:#333;
+  }
+  .card{width:min(92vw,680px);background:#fff;border-radius:26px;box-shadow:0 20px 60px rgba(111,43,110,.15);padding:22px 18px 26px;}
+  .stage{position:relative;aspect-ratio:1/1;width:100%;border-radius:24px;display:grid;place-items:center;}
+  .wrap{position:relative;width:92%;aspect-ratio:1/1;display:grid;place-items:center;}
+  .ring{position:absolute;inset:-10px;border-radius:50%;box-shadow:inset 0 0 0 12px var(--ring), 0 6px 14px rgba(0,0,0,.05);}
+  canvas{width:100%;height:100%}
+  .hub{position:absolute;width:22%;aspect-ratio:1/1;border-radius:50%;background:#fff;box-shadow:0 4px 10px rgba(111,43,110,.2), inset 0 0 0 10px var(--purple);display:grid;place-items:center;}
+  .pointer{position:absolute;width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:28px solid var(--purple);top:calc(50% - 14px);left:50%;transform:translate(-50%,-50%) rotate(0deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,.2));}
+  .cta{user-select:none;cursor:pointer;margin:18px auto 6px;display:block;width:min(90%,420px);border:0;border-radius:999px;padding:18px 10px;font-size:22px;font-weight:700;letter-spacing:.5px;color:#592053;background:linear-gradient(180deg,var(--btn-grad-1),var(--btn-grad-2));box-shadow:0 12px 26px rgba(111,43,110,.25);}
+  .cta:disabled{opacity:.4;cursor:not-allowed}
+  .actions{display:flex;gap:14px;justify-content:center;margin-top:14px}
+  .btn{border:0;border-radius:16px;padding:12px 16px;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;background:#f7f2fb;box-shadow:0 6px 16px rgba(111,43,110,.12);}
+  .note{margin-top:12px;text-align:center;line-height:1.6;color:#5b5061;font-size:14px}
+  .toast{position:fixed;left:50%;top:18px;transform:translateX(-50%);background:#fff;border-radius:12px;padding:12px 16px;box-shadow:0 10px 30px rgba(0,0,0,.18);font-weight:700;display:none;z-index:99}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="stage">
+<div class="wrap">
+<div class="ring"></div>
+<canvas id="wheel"></canvas>
+<div class="hub"></div>
+<div class="pointer" aria-hidden="true"></div>
+</div></div>
+<button id="startBtn" class="cta">Start</button>
+<div class="actions">
+<button class="btn" id="subBtn">✅ Subscribe / 订阅 PCD</button>
+<button class="btn" id="shareBtn">🔗 Share / 分享</button>
+</div>
+<div class="note">
+🌟 每周：1 次（含加码 0）· 剩余：1<br>🌟 Weekly allowance: 1 (bonus 0) · remaining: 1
+</div></div>
+<div id="toast" class="toast">🎉 恭喜中獎！/ Congratulations!</div>
+<script src="https://cdn.jsdelivr.net/npm/winwheel@2.8.0/Winwheel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tween.js@18.6.4"></script>
+</body>
+</html>
