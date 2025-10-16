@@ -96,34 +96,34 @@
     <div id="status" class="muted status"></div>
   </div>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
 const tg = window.Telegram?.WebApp;
 if (tg) tg.expand();
-  function updateRemainingDisplay() {
-  const remaining = getRemaining();
-  const el = document.getElementById('remaining');
-  if (el) {
-    el.textContent = `剩餘次數：${remaining} 次`;
-  }
+
+function updateRemainingDisplay() {
+  const remaining = getRemaining();
+  const el = document.getElementById('remaining');
+  if (el) {
+    el.textContent = `剩餘次數: ${remaining} 次`;
+  }
 }
-</script>
-<script>
-(() => {
-  const prizes = [
-    "1 😢 sorry",
-    "45⏰ or 60⏰ / 10 off",
-    "3 😢 sorry",
-    "45⏰ or 60⏰ / 20 off",
-    "8 😢 sorry",
-    "45⏰ or 60⏰ / 40 off",
-    "5 😢 sorry",
-    "45⏰ or 60⏰ / 10 off"
-  ];
-  const segColors = ["#cde","#ffd7d7","#cfe9ff","#ffd7a8","#d7d0ff","#cde","#ffd7d7","#cfe9ff"];
-  const n = prizes.length;
-  const wheel = document.getElementById('wheel');
-  const ctx = wheel.getContext('2d');
+
+// 🟢 在這裡加獎項（第 110 行之後）
+const prizes = [
+  "1 😢 sorry",
+  "3 😢 sorry",
+  "5 😢 sorry",
+  "8 😢 sorry",
+  "45💋 or 60💋 / 10 off",
+  "45💋 or 60💋 / 20 off",
+  "45💋 or 60💋 / 40 off"
+];
+
+const segColors = ["#fcde", "#ffd7d7", "#cfe9ff", "#ffd7a8", "#d7d0ff"];
+const n = prizes.length;
+const wheel = document.getElementById('wheel');
+const ctx = wheel.getContext('2d');
 
   // Sizing
   const DPR = Math.max(2, window.devicePixelRatio || 1);
