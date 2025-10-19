@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PCD Lucky Wheel — CN/EN</title>
+<title>PCD Lucky Wheel</title>
 <style>
   :root{
-    --brand:#6e2b74;        /* 指针/强调 紫 */
-    --ring:#eadcf3;         /* 外圈浅紫 */
+    --brand:#6e2b74;      /* 主紫 */
+    --ring:#eadcf3;       /* 外圈 */
     --card:#ffffff;
     --bg1:#fbf1ff;
     --shadow:0 8px 30px rgba(0,0,0,.08);
@@ -19,7 +19,7 @@
   body{
     display:flex;align-items:center;justify-content:center;min-height:100vh;
     background:radial-gradient(1200px 600px at 50% -200px,var(--bg1),#fff);
-    font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,PingFang SC,Hiragino Sans GB,Microsoft YaHei,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
+    font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,PingFang SC, Hiragino Sans GB, Microsoft YaHei, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
     color:var(--text);
   }
   .card{
@@ -31,23 +31,26 @@
     position:relative;background:#fff;border-radius:22px;padding:18px;
     box-shadow:inset 0 0 0 2px #f2e9f7;
   }
-  .wheelWrap{position:relative; width:100%; aspect-ratio:1/1;}
-  canvas{width:100%;height:100%;display:block; border-radius:50%;
-    box-shadow:inset 0 0 0 14px var(--ring), inset 0 0 0 3px #fff;}
-  /* 中心紫色圓 + 向上小三角當指針（轉盤本體旋轉、指針固定） */
+  .wheelWrap{position:relative;width:100%;aspect-ratio:1/1}
+  canvas{
+    width:100%;height:100%;display:block;border-radius:50%;
+    box-shadow:inset 0 0 0 14px var(--ring), inset 0 0 0 3px #fff;
+    background:#fff;
+  }
+  /* 中央指針（白圓＋紫色小三角朝上） */
   .center-pointer{
     position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
     width:22%;aspect-ratio:1/1;border-radius:50%;
-    background:
-      radial-gradient(circle at 50% 50%, #fff 0 36%, #ffffff 36%, var(--brand) 36%, var(--brand) 100%);
+    background:radial-gradient(circle at 50% 50%, #fff 35%, #ffffff 36%, var(--brand) 36%, var(--brand) 100%);
     display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 6px 10px rgba(0,0,0,.12));
   }
   .center-pointer:before{
     content:"";width:0;height:0;position:absolute;top:6.5%;
-    left:50%;transform:translate(-50%, -50%);
+    left:50%;transform:translate(-50%,-50%);
     border-left:12px solid transparent;border-right:12px solid transparent;
-    border-bottom:18px solid var(--brand); /* 小三角朝上（指針尖端） */
+    border-bottom:18px solid var(--brand);
   }
+
   .actions{display:flex;gap:14px;justify-content:center;margin:18px 0 8px}
   .btn{
     padding:14px 24px;border-radius:18px;border:0;cursor:pointer;
@@ -55,16 +58,27 @@
     color:#632d79;font-weight:700;font-size:20px;box-shadow:var(--shadow);
   }
   .btn:disabled{opacity:.6;cursor:not-allowed}
+
+  .topRow{
+    display:flex;align-items:center;justify-content:center;gap:14px;
+    margin:10px 0 0;
+    color:#866; font-weight:600;
+  }
+  .remain{
+    background:#fff;border-radius:12px;padding:8px 12px;box-shadow:var(--shadow);
+    font-size:14px;color:#5a5a5a;
+  }
+
   .chipRow{display:flex;gap:14px;justify-content:center;margin:8px 0 10px}
   .chip{
     display:flex;align-items:center;gap:10px;border-radius:16px;padding:12px 16px;
-    background:#fff;box-shadow:var(--shadow);color:#3b3b3b;font-weight:600;
+    background:#fff;box-shadow:var(--shadow);color:#3b3b3b;font-weight:600;border:0;cursor:pointer;
   }
   .chip .dot{font-size:20px}
-  .muted{color:var(--muted); text-align:center; font-size:14px;line-height:1.6}
+
+  .muted{color:var(--muted);text-align:center;font-size:14px;line-height:1.6}
   .rule{margin-top:6px}
   .status{margin-top:8px}
-  #remaining{margin-top:8px; text-align:center; color:#6d4ecb; font-weight:700;}
 </style>
 </head>
 <body>
@@ -76,129 +90,86 @@
       </div>
     </div>
 
+    <div class="topRow">
+      <div id="remaining" class="remain">--</div>
+    </div>
+
     <div class="actions">
       <button id="startBtn" class="btn">开始 / Start</button>
     </div>
 
     <div class="chipRow">
-      <button id="subBtn" class="chip"><span class="dot">✅</span><span id="subText">订阅 PCD / Subscribe PCD</span></button>
-      <button id="shareBtn" class="chip"><span class="dot">🔗</span><span id="shareText">分享 / Share</span></button>
+      <button id="subBtn" class="chip"><span class="dot">✅</span><span id="t_sub">订阅 PCD / Subscribe PCD</span></button>
+      <button id="shareBtn" class="chip"><span class="dot">🔗</span><span id="t_share">分享 / Share</span></button>
     </div>
 
-    <div id="remaining">--</div>
-    <div id="rule" class="muted rule"></div>
+    <div class="muted rule" id="ruleText">
+      🌟 每 3 天 1 次；完成 订阅 + 分享 再 +1；抽到 🎁 再 +1<br/>
+      (Every 3 days 1 spin; +1 after subscribing + sharing; +1 on 🎁 one more chance)
+    </div>
     <div id="status" class="muted status"></div>
   </div>
 
 <script>
 (() => {
-  /************** i18n：自動雙語（簡中 / 英） **************/
-  const lang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-  const isZH = lang.startsWith('zh'); // 中文一律視為顯示簡體
-  const I18N = {
-    zh: {
-      start: '开始 / Start',
-      subscribe: '订阅 PCD / Subscribe PCD',
-      share: '分享 / Share',
-      rule: '🌟 每 3 天 1 次；完成 订阅 + 分享 再 +1 次；抽到 🎁 one more chance 再 +1 次。',
-      remaining: (rem, all, period) => `剩余次数：${rem} / ${all}　(周期: ${period})`,
-      usedup: '本期次数已用完（每 3 天重置）',
-      congrats: '🎉 恭喜中奖！',
-      sorry: '😢 很遗憾',
-      oneMore: '🎁 one more chance',
-      status: (allow, used, sub, sh) => `本期可用：${allow} 次（已用 ${used}）· 订阅/分享：${sub}/${sh}`
-    },
-    en: {
-      start: 'Start',
-      subscribe: 'Subscribe PCD',
-      share: 'Share',
-      rule: '🌟 Every 3 days 1 spin; +1 after subscribing + sharing; +1 on 🎁 one more chance.',
-      remaining: (rem, all, period) => `Remaining: ${rem} / ${all}  (Period: ${period})`,
-      usedup: 'No spins left this period (resets every 3 days).',
-      congrats: '🎉 Congratulations!',
-      sorry: '😢 sorry',
-      oneMore: '🎁 one more chance',
-      status: (allow, used, sub, sh) => `Allowance: ${allow} (used ${used}) · subscribe/share: ${sub}/${sh}`
-    }
+  /************ i18n ************/
+  const tg = window.Telegram?.WebApp || null;
+  const langGuess =
+    tg?.initDataUnsafe?.user?.language_code ||
+    navigator.language || "en";
+  const isCN = /^zh/i.test(langGuess);
+
+  const T = isCN ? {
+    start: "开始 / Start",
+    sub: "订阅 PCD / Subscribe PCD",
+    share: "分享 / Share",
+    rule: "🌟 每 3 天 1 次；完成 订阅 + 分享 再 +1；抽到 🎁 再 +1<br/>(Every 3 days 1 spin; +1 after subscribing + sharing; +1 on 🎁 one more chance)",
+    remain: (r,p) => `剩餘次數：${r}（週期：每 ${p} 天）`,
+    usedOut: "本期已用完 / Allowance used up",
+    congrats: "🎉 恭喜中奖！\n\n",
+  } : {
+    start: "Start",
+    sub: "Subscribe PCD",
+    share: "Share",
+    rule: "🌟 Every 3 days 1 spin; +1 after subscribing + sharing; +1 on 🎁 one more chance",
+    remain: (r,p) => `Remaining: ${r} (period: ${p} days)`,
+    usedOut: "Allowance used up",
+    congrats: "🎉 Congratulations!\n\n",
   };
-  const T = isZH ? I18N.zh : I18N.en;
 
-  // 套用文案
-  const startBtn = document.getElementById('startBtn');
-  const subBtn   = document.getElementById('subBtn');
-  const shareBtn = document.getElementById('shareBtn');
-  const subText  = document.getElementById('subText');
-  const shareText= document.getElementById('shareText');
-  const ruleEl   = document.getElementById('rule');
-  const statusEl = document.getElementById('status');
-  const remainingEl = document.getElementById('remaining');
+  document.getElementById("startBtn").textContent = T.start;
+  document.getElementById("t_sub").textContent = T.sub;
+  document.getElementById("t_share").textContent = T.share;
+  document.getElementById("ruleText").innerHTML = T.rule;
 
-  startBtn.textContent = T.start;
-  subText.textContent  = T.subscribe;
-  shareText.textContent= T.share;
-  ruleEl.textContent   = T.rule;
-
-  /************** Telegram WebApp **************/
-  const TG = window.Telegram && Telegram.WebApp ? Telegram.WebApp : null;
-  if (TG){ TG.expand(); TG.ready(); }
-
-  /************** 三天週期狀態（period） **************/
-  const KEY = "pcd_wheel_cn_en_period3d_v1";
-  function periodKey3d(){
-    // 以固定 epoch 切 3 天一個週期：p0, p1, ...
-    const epoch = new Date(2025,0,1).getTime();
-    const now   = Date.now();
-    return 'p' + Math.floor((now - epoch) / (3*24*3600*1000));
-  }
-  function loadState(){
-    try{ return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }
-    catch(_){ return {}; }
-  }
-  function saveState(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
-
-  let state = loadState();
-  const currentPeriod = periodKey3d();
-  if (state.period !== currentPeriod){
-    state = {period: currentPeriod, used: 0, subscribed: false, shared: false, bonus: 0};
-    saveState(state);
-  }
-
-  // 可用次數：基本 1 + (訂閱且分享?1:0) + bonus（抽到 one more chance）
-  function allowance(){ return 1 + (state.subscribed && state.shared ? 1 : 0) + (state.bonus||0); }
-  function remaining(){ return Math.max(0, allowance() - (state.used||0)); }
-
-  function updateStatus(){
-    const sub = state.subscribed ? "✅" : "❌";
-    const shr = state.shared     ? "✅" : "❌";
-    statusEl.textContent = T.status(allowance(), state.used||0, sub, shr);
-    remainingEl.textContent = T.remaining(remaining(), allowance(), state.period);
-    startBtn.disabled = remaining() <= 0;
-  }
-
-  /************** 轉盤（9 等分，含 🎁 one more chance；⏰ 符號） **************/
+  /************ prize setup (9 等分，含 🎁 one more chance) ************/
   const prizes = [
-    `1 ${T.sorry}`,
+    "1 😢 sorry",
     "45⏰ or 60⏰ / 10 off",
-    `3 ${T.sorry}`,
+    "3 😢 sorry",
     "45⏰ or 60⏰ / 20 off",
-    T.oneMore,
+    "🎁 one more chance",
+    "8 😢 sorry",
     "45⏰ or 60⏰ / 40 off",
-    `8 ${T.sorry}`,
-    "45⏰ or 60⏰ / 10 off",
-    `5 ${T.sorry}`
+    "5 😢 sorry",
+    "45⏰ or 60⏰ / 10 off"
   ];
-  const segColors = ["#cde","#ffd7d7","#cfe9ff","#ffd7a8","#fff1b3","#ffd7e6","#d7d0ff","#cde","#efe1ff"];
+  const segColors = ["#cfe6ff","#ffe0e0","#e9f7ff","#ffe6c9","#fff0b8","#e6ddff","#e6f1ff","#ffe0f0","#e9f7ff"];
 
+  /************ canvas sizing & draw ************/
   const wheel = document.getElementById('wheel');
-  const ctx   = wheel.getContext('2d');
+  const ctx = wheel.getContext('2d');
 
-  // 畫布大小（高 DPI）
-  const DPR = Math.max(2, window.devicePixelRatio || 1);
-  const size = 640; wheel.width = size*DPR; wheel.height = size*DPR;
-  const W = wheel.width, H = wheel.height, R = Math.min(W,H)/2 * 0.82;
+  const DPR = Math.max(2, window.devicePixelRatio || 1); // 高解析，字體穩定
+  const size = 640;
+  wheel.width  = size * DPR;
+  wheel.height = size * DPR;
+
+  const W = wheel.width, H = wheel.height;
+  const R = Math.min(W, H)/2 * 0.82;
   const CX = W/2, CY = H/2;
-  const n  = prizes.length;
-  const segA = 2*Math.PI / n;
+  const n = prizes.length;
+  const segAngle = 2*Math.PI / n;
   let currentRotation = 0;
 
   function drawWheel(){
@@ -206,79 +177,112 @@
     ctx.save();
     ctx.translate(CX, CY);
     ctx.rotate(currentRotation);
-    // 讓 12 點鐘方向為 0 度，且每片以中心線對齊文字
-    ctx.rotate(-Math.PI/2);
+    ctx.rotate(-Math.PI/2);               // 12點方向為起點
 
     for(let i=0;i<n;i++){
-      // 扇形
+      // 區塊
       ctx.beginPath();
       ctx.moveTo(0,0);
       ctx.fillStyle = segColors[i % segColors.length];
-      ctx.arc(0,0,R, i*segA, (i+1)*segA);
+      ctx.arc(0,0,R, i*segAngle, (i+1)*segAngle);
       ctx.closePath(); ctx.fill();
 
       // 文字
       ctx.save();
-      ctx.rotate(i*segA + segA/2);
+      ctx.rotate(i*segAngle + segAngle/2);
       ctx.textAlign = "center";
       ctx.fillStyle = "#2b2b2b";
-      ctx.font = `${22*DPR}px Arial`;
-      ctx.translate(R*0.68, 0);
+      ctx.font = `${22*DPR}px Arial, Helvetica, sans-serif`;
+      ctx.translate(R*0.68,0);
       ctx.rotate(Math.PI/2);
-      wrapText(prizes[i], 0, 0, R*0.42, 26*DPR);
+      wrapText(ctx, prizes[i], 0, 0, R*0.42, 26*DPR);
       ctx.restore();
     }
     ctx.restore();
   }
 
-  function wrapText(text,x,y,maxWidth,lineHeight){
+  function wrapText(ctx,text,x,y,maxWidth,lineHeight){
+    const words = text.split(' ');
     let line = '', yy = y;
-    const words = (''+text).split(' ');
-    for(let i=0;i<words.length;i++){
-      const test = line + (line?' ':'') + words[i];
-      if (ctx.measureText(test).width > maxWidth && i>0){
-        ctx.fillText(line, x, yy);
-        line = words[i]; yy += lineHeight;
+    for(let k=0;k<words.length;k++){
+      const test = line + words[k] + ' ';
+      if (ctx.measureText(test).width > maxWidth && k>0){
+        ctx.fillText(line,x,yy);
+        line = words[k] + ' ';
+        yy += lineHeight;
       }else{
         line = test;
       }
     }
-    ctx.fillText(line, x, yy);
+    ctx.fillText(line,x,yy);
   }
 
-  function normalize(a){ a%=2*Math.PI; if(a<0)a+=2*Math.PI; return a; }
-  function indexByRotation(rot){
-    // 指針固定在 12 點；求 12 點落在第幾片（以 segA 切分）
-    const a = normalize(rot);
-    const rel = normalize(0 - a); // 0=12點方向
-    return Math.floor(rel / segA) % n;
-  }
-  function shortest(from,to){
-    let d = to - (from % (2*Math.PI));
-    if (d >  Math.PI) d -= 2*Math.PI;
-    if (d < -Math.PI) d += 2*Math.PI;
-    return d;
+  /************ period = 3 天 ************/
+  const PERIOD_DAYS = 3;
+
+  function periodKey3d(){
+    const now = Date.now();
+    const msPer3d = PERIOD_DAYS * 24*3600*1000;
+    return `p${Math.floor(now/msPer3d)}`;
   }
 
-  /************** 旋轉動畫 **************/
+  /************ 狀態（localStorage） ************/
+  const KEY = "pcd_wheel_v2";
+  function loadState(){
+    const raw = JSON.parse(localStorage.getItem(KEY) || "{}");
+    const key = periodKey3d();
+    if(raw.pkey !== key){
+      return { pkey:key, used:0, bonus:0, subscribed:false, shared:false };
+    }
+    return raw;
+  }
+  function saveState(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+
+  let state = loadState();
+
+  function baseAllowance(){
+    return 1 + (state.subscribed && state.shared ? 1 : 0);
+  }
+  function totalAllowance(){                 // 含 🎁 加碼
+    return baseAllowance() + (state.bonus||0);
+  }
+  function remaining(){ return Math.max(0, totalAllowance() - (state.used||0)); }
+
+  function updateRemainingUI(){
+    const el = document.getElementById("remaining");
+    el.textContent = T.remain(remaining(), PERIOD_DAYS);
+  }
+
+  function updateStatus(){
+    const s = document.getElementById("status");
+    const sub = state.subscribed ? "✅" : "❌";
+    const shr = state.shared ? "✅" : "❌";
+    s.innerHTML = `Allowance: ${totalAllowance()} (used ${state.used||0}) · subscribe/share: ${sub}/${shr}`;
+  }
+
+  /************ Spin 動畫 ************/
+  let spinning = false;
   function spin(){
-    if(remaining()<=0){ alert(T.usedup); return; }
+    if(spinning) return;
+    if(remaining()<=0){ alert(T.usedOut); return; }
+
+    spinning = true;
     startBtn.disabled = true;
 
     const targetIndex = Math.floor(Math.random()*n);
-    const targetAngle = - (targetIndex*segA + segA/2) - Math.PI/2; // 讓目標扇形中心到 12 點
-    const extra = (Math.PI*2) * 6; // 多轉幾圈
-    const finalRot = normalize(currentRotation + extra + shortest(currentRotation, targetAngle));
+    const targetAngle = -Math.PI/2 - (targetIndex*segAngle + segAngle/2);
+    const extra = (Math.PI*2) * 6;
+    const finalRot = normalize(currentRotation + extra + shortestDelta(currentRotation, targetAngle));
 
-    const t0 = performance.now(), D = 4200;
+    const t0 = performance.now();
+    const D = 4200;
     (function anim(t){
-      const p = Math.min(1, (t - t0)/D);
-      const e = 1 - Math.pow(1-p, 3); // ease-out
-      const rot = currentRotation + (finalRot - currentRotation)*e;
-      currentRotation = rot;
+      const p = Math.min(1,(t-t0)/D);
+      const ease = 1 - Math.pow(1-p,3);
+      currentRotation = currentRotation + (finalRot-currentRotation)*ease;
       drawWheel();
-      if (p < 1) requestAnimationFrame(anim);
-      else {
+      if(p<1){ requestAnimationFrame(anim); }
+      else{
         currentRotation = normalize(finalRot);
         drawWheel();
         const idx = indexByRotation(currentRotation);
@@ -287,68 +291,98 @@
     })(t0);
   }
 
-  /************** 結果處理（🎁 加一次、sendData 完整 payload） **************/
+  function shortestDelta(from, to){
+    let d = to - (from % (2*Math.PI));
+    if(d >  Math.PI) d -= 2*Math.PI;
+    if(d < -Math.PI) d += 2*Math.PI;
+    return d;
+  }
+  function normalize(a){ a%=2*Math.PI; if(a<0) a+=2*Math.PI; return a; }
+  function indexByRotation(rot){
+    const a = normalize(rot);
+    const top = a;                     // 指針在 12 點
+    return Math.floor(((2*Math.PI - top) / segAngle)) % n;
+  }
+
+  /************ 完成一次抽獎 ************/
   function finish(text, index){
-    // 先扣一次
     state.used = (state.used||0) + 1;
 
-    // 若為 one more chance → 當期 bonus +1（等於再多一次）
-    const gotBonus = /one\s*more\s*chance/i.test(text);
-    if (gotBonus){
-      state.bonus = (state.bonus || 0) + 1;
+    // 🎁 one more chance：額外 +1（本次已用，等於淨多 0，但下次可再多一次）
+    let bonusGranted = false;
+    if (/one\s+more\s+chance/i.test(text)) {
+      state.bonus = (state.bonus||0) + 1;
+      bonusGranted = true;
     }
 
     saveState(state);
+    updateRemainingUI();
     updateStatus();
+    alert(T.congrats + prizes[index]);
 
-    alert(`${T.congrats}\n\n${text}`);
-
-    // 回傳完整資料給 bot
-    if (TG){
-      const payload = {
-        bot_username: "pcd_luckywheel_bot",
-        type: "spin_result",
-        lang: isZH ? 'zh' : 'en',
-        result: text,
-        index,
-        prizes,
-        period: state.period,         // 三天週期代號
-        used: state.used,
-        allowance: allowance(),
-        remaining: remaining(),
-        subscribed: !!state.subscribed,
-        shared: !!state.shared,
-        bonus: state.bonus||0,
-        bonus_added: gotBonus ? 1 : 0,
-        timestamp: new Date().toISOString()
-      };
-      try{ TG.sendData(JSON.stringify(payload)); }catch(e){}
-    }
+    // 回傳給 Telegram bot
+    const payload = {
+      event: "spin_result",
+      result: prizes[index],
+      index,
+      used: state.used,
+      allowance: totalAllowance(),
+      baseAllowance: baseAllowance(),
+      bonus: state.bonus||0,
+      remaining: remaining(),
+      subscribed: state.subscribed,
+      shared: state.shared,
+      bonusGranted,                   // 是否因 🎁 加過一次
+      lang: isCN ? "zh" : "en",
+      periodDays: PERIOD_DAYS,
+      periodKey: state.pkey,
+      ts: new Date().toISOString(),
+      version: "v2.0"
+    };
+    try{ tg?.sendData(JSON.stringify(payload)); }catch(e){}
 
     startBtn.disabled = remaining()<=0;
+    spinning = false;
   }
 
-  /************** 按鈕：訂閱 / 分享 **************/
-  subBtn.addEventListener('click', () => {
-    window.open('https://t.me/pcatdolls', '_blank');
-    state.subscribed = true; saveState(state); updateStatus();
-  });
-  shareBtn.addEventListener('click', async () => {
-    const text = isZH ? '来抽奖！试试手气！' : 'Spin the wheel! Try your luck!';
-    try{
-      if (navigator.share){
-        await navigator.share({title:'PCD Lucky Wheel', text, url:location.href});
-      }else{
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(text)}`,'_blank');
-      }
-      state.shared = true; saveState(state); updateStatus();
-    }catch(_){}
-  });
+  /************ Buttons ************/
+  const startBtn = document.getElementById('startBtn');
+  const subBtn   = document.getElementById('subBtn');
+  const shareBtn = document.getElementById('shareBtn');
+
   startBtn.addEventListener('click', spin);
 
-  /************** 初始化 **************/
+  subBtn.addEventListener('click', () => {
+    window.open('https://t.me/pcatdolls','_blank');
+    state.subscribed = true; saveState(state);
+    updateRemainingUI(); updateStatus();
+    startBtn.disabled = remaining()<=0;
+  });
+
+  shareBtn.addEventListener('click', async () => {
+    const data = {title:'PCD Lucky Wheel', text:'Try your luck!', url:location.href};
+    try{
+      if(navigator.share){ await navigator.share(data); }
+      else{
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(data.text)}`,'_blank');
+      }
+      state.shared = true; saveState(state);
+      updateRemainingUI(); updateStatus();
+      startBtn.disabled = remaining()<=0;
+
+      // 可選：把分享事件也回傳
+      try{ tg?.sendData(JSON.stringify({event:"share", lang:isCN?"zh":"en", ts:new Date().toISOString()})); }catch(e){}
+    }catch(e){}
+  });
+
+  /************ Init ************/
+  tg?.expand(); tg?.ready();
   drawWheel();
+  updateRemainingUI();
   updateStatus();
+  startBtn.disabled = remaining()<=0;
+
+  // 不調整 canvas 尺寸，避免字體再計算造成跳動
 })();
 </script>
 </body>
