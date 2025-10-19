@@ -2,147 +2,101 @@
 <html lang="zh-Hans">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PCD Lucky Wheel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PCD Lucky Wheel — CN/EN</title>
 <style>
-  :root{
-    --brand:#6e2b74;      /* 主紫 */
-    --ring:#eadcf3;       /* 外圈 */
-    --card:#ffffff;
-    --bg1:#fbf1ff;
-    --shadow:0 8px 30px rgba(0,0,0,.08);
-    --text:#2b2b2b;
-    --muted:#7d7d7d;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0}
-  body{
-    display:flex;align-items:center;justify-content:center;min-height:100vh;
-    background:radial-gradient(1200px 600px at 50% -200px,var(--bg1),#fff);
-    font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,PingFang SC, Hiragino Sans GB, Microsoft YaHei, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
-    color:var(--text);
-  }
-  .card{
-    width:min(680px,96vw);
-    background:var(--card);border-radius:28px;padding:22px 20px 26px;
-    box-shadow:var(--shadow);
-  }
-  .stage{
-    position:relative;background:#fff;border-radius:22px;padding:18px;
-    box-shadow:inset 0 0 0 2px #f2e9f7;
-  }
-  .wheelWrap{position:relative;width:100%;aspect-ratio:1/1}
-  canvas{
-    width:100%;height:100%;display:block;border-radius:50%;
-    box-shadow:inset 0 0 0 14px var(--ring), inset 0 0 0 3px #fff;
-    background:#fff;
-  }
-  /* 中央指針（白圓＋紫色小三角朝上） */
-  .center-pointer{
-    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    width:22%;aspect-ratio:1/1;border-radius:50%;
-    background:radial-gradient(circle at 50% 50%, #fff 35%, #ffffff 36%, var(--brand) 36%, var(--brand) 100%);
-    display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 6px 10px rgba(0,0,0,.12));
-  }
-  .center-pointer:before{
-    content:"";width:0;height:0;position:absolute;top:6.5%;
-    left:50%;transform:translate(-50%,-50%);
-    border-left:12px solid transparent;border-right:12px solid transparent;
-    border-bottom:18px solid var(--brand);
-  }
-
-  .actions{display:flex;gap:14px;justify-content:center;margin:18px 0 8px}
-  .btn{
-    padding:14px 24px;border-radius:18px;border:0;cursor:pointer;
-    background:linear-gradient(180deg,#f7d1ff,#ffc2c2);
-    color:#632d79;font-weight:700;font-size:20px;box-shadow:var(--shadow);
-  }
-  .btn:disabled{opacity:.6;cursor:not-allowed}
-
-  .topRow{
-    display:flex;align-items:center;justify-content:center;gap:14px;
-    margin:10px 0 0;
-    color:#866; font-weight:600;
-  }
-  .remain{
-    background:#fff;border-radius:12px;padding:8px 12px;box-shadow:var(--shadow);
-    font-size:14px;color:#5a5a5a;
-  }
-
-  .chipRow{display:flex;gap:14px;justify-content:center;margin:8px 0 10px}
-  .chip{
-    display:flex;align-items:center;gap:10px;border-radius:16px;padding:12px 16px;
-    background:#fff;box-shadow:var(--shadow);color:#3b3b3b;font-weight:600;border:0;cursor:pointer;
-  }
-  .chip .dot{font-size:20px}
-
-  .muted{color:var(--muted);text-align:center;font-size:14px;line-height:1.6}
-  .rule{margin-top:6px}
-  .status{margin-top:8px}
+:root {
+  --brand: #6e2b74;
+  --ring: #eadcf3;
+  --card: #ffffff;
+  --bg1: #fbf1ff;
+  --grad1: #f7d1ff;
+  --grad2: #ffd1d1;
+  --shadow: 0 6px 16px rgba(0,0,0,0.1);
+  --text: #2b2b2b;
+  --muted: #7d7d7d;
+}
+*{box-sizing:border-box;}
+body {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;margin:0;background:radial-gradient(800px at 50% -150px,var(--bg1),#fff);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC',sans-serif;
+  color:var(--text);
+}
+.card {
+  background:var(--card);
+  border-radius:26px;
+  box-shadow:var(--shadow);
+  padding:24px 18px 28px;
+  width:min(600px,92vw);
+}
+.stage {
+  position:relative;background:#fff;border-radius:20px;padding:18px;
+  box-shadow:inset 0 0 0 2px #f2e9f7;
+}
+.wheelWrap {
+  width:100%;aspect-ratio:1/1;position:relative;
+}
+canvas {
+  width:100%;height:100%;border-radius:50%;
+  box-shadow:inset 0 0 0 14px var(--ring),inset 0 0 0 3px #fff;
+}
+.center-pointer {
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:22%;aspect-ratio:1/1;border-radius:50%;
+  background:radial-gradient(circle,#fff 35%,#fff 36%,var(--brand) 36%,var(--brand) 100%);
+}
+.center-pointer::before {
+  content:"";position:absolute;top:8%;left:50%;transform:translate(-50%,-50%);
+  border-left:10px solid transparent;border-right:10px solid transparent;
+  border-bottom:16px solid var(--brand);
+}
+.actions {display:flex;justify-content:center;margin:20px 0 8px;}
+.btn {
+  background:linear-gradient(180deg,#f7d1ff,#ffd1d1);
+  color:#632d79;border:0;border-radius:18px;
+  padding:12px 28px;font-size:20px;font-weight:700;cursor:pointer;
+  box-shadow:var(--shadow);
+}
+.btn:disabled {opacity:0.6;cursor:not-allowed;}
+.chipRow {display:flex;justify-content:center;gap:12px;margin:10px 0;}
+.chip {
+  display:flex;align-items:center;gap:8px;padding:10px 16px;
+  background:#fff;border-radius:16px;font-weight:600;
+  box-shadow:var(--shadow);
+}
+.chip .dot {font-size:20px;}
+.muted {color:var(--muted);font-size:14px;text-align:center;line-height:1.6;}
+.status {margin-top:8px;}
 </style>
 </head>
 <body>
-  <div class="card">
-    <div class="stage">
-      <div class="wheelWrap">
-        <canvas id="wheel"></canvas>
-        <div class="center-pointer" aria-hidden="true"></div>
-      </div>
+<div class="card">
+  <div class="stage">
+    <div class="wheelWrap">
+      <canvas id="wheel"></canvas>
+      <div class="center-pointer"></div>
     </div>
-
-    <div class="topRow">
-      <div id="remaining" class="remain">--</div>
-    </div>
-
-    <div class="actions">
-      <button id="startBtn" class="btn">开始 / Start</button>
-    </div>
-
-    <div class="chipRow">
-      <button id="subBtn" class="chip"><span class="dot">✅</span><span id="t_sub">订阅 PCD / Subscribe PCD</span></button>
-      <button id="shareBtn" class="chip"><span class="dot">🔗</span><span id="t_share">分享 / Share</span></button>
-    </div>
-
-    <div class="muted rule" id="ruleText">
-      🌟 每 3 天 1 次；完成 订阅 + 分享 再 +1；抽到 🎁 再 +1<br/>
-      (Every 3 days 1 spin; +1 after subscribing + sharing; +1 on 🎁 one more chance)
-    </div>
-    <div id="status" class="muted status"></div>
   </div>
+
+  <div class="actions">
+    <button id="startBtn" class="btn">开始 / Start</button>
+  </div>
+
+  <div class="chipRow">
+    <button id="subBtn" class="chip"><span class="dot">✅</span>订阅 / Subscribe</button>
+    <button id="shareBtn" class="chip"><span class="dot">🔗</span>分享 / Share</button>
+  </div>
+
+  <div class="muted">
+    🌟 每 3 天 1 次；完成订阅 + 分享 再 +1；抽到 🎁 one more chance 再 +1<br>
+    (Every 3 days 1 spin; +1 after subscribing + sharing; +1 on 🎁 one more chance)
+  </div>
+  <div id="status" class="muted status"></div>
+</div>
 
 <script>
 (() => {
-  /************ i18n ************/
-  const tg = window.Telegram?.WebApp || null;
-  const langGuess =
-    tg?.initDataUnsafe?.user?.language_code ||
-    navigator.language || "en";
-  const isCN = /^zh/i.test(langGuess);
-
-  const T = isCN ? {
-    start: "开始 / Start",
-    sub: "订阅 PCD / Subscribe PCD",
-    share: "分享 / Share",
-    rule: "🌟 每 3 天 1 次；完成 订阅 + 分享 再 +1；抽到 🎁 再 +1<br/>(Every 3 days 1 spin; +1 after subscribing + sharing; +1 on 🎁 one more chance)",
-    remain: (r,p) => `剩餘次數：${r}（週期：每 ${p} 天）`,
-    usedOut: "本期已用完 / Allowance used up",
-    congrats: "🎉 恭喜中奖！\n\n",
-  } : {
-    start: "Start",
-    sub: "Subscribe PCD",
-    share: "Share",
-    rule: "🌟 Every 3 days 1 spin; +1 after subscribing + sharing; +1 on 🎁 one more chance",
-    remain: (r,p) => `Remaining: ${r} (period: ${p} days)`,
-    usedOut: "Allowance used up",
-    congrats: "🎉 Congratulations!\n\n",
-  };
-
-  document.getElementById("startBtn").textContent = T.start;
-  document.getElementById("t_sub").textContent = T.sub;
-  document.getElementById("t_share").textContent = T.share;
-  document.getElementById("ruleText").innerHTML = T.rule;
-
-  /************ prize setup (9 等分，含 🎁 one more chance) ************/
   const prizes = [
     "1 😢 sorry",
     "45⏰ or 60⏰ / 10 off",
@@ -154,235 +108,134 @@
     "5 😢 sorry",
     "45⏰ or 60⏰ / 10 off"
   ];
-  const segColors = ["#cfe6ff","#ffe0e0","#e9f7ff","#ffe6c9","#fff0b8","#e6ddff","#e6f1ff","#ffe0f0","#e9f7ff"];
-
-  /************ canvas sizing & draw ************/
-  const wheel = document.getElementById('wheel');
-  const ctx = wheel.getContext('2d');
-
-  const DPR = Math.max(2, window.devicePixelRatio || 1); // 高解析，字體穩定
-  const size = 640;
-  wheel.width  = size * DPR;
-  wheel.height = size * DPR;
-
-  const W = wheel.width, H = wheel.height;
-  const R = Math.min(W, H)/2 * 0.82;
-  const CX = W/2, CY = H/2;
+  const segColors = ["#dbe7ff","#ffd7d7","#d6f9ff","#ffe5b8","#fff0c2","#e3d8ff","#ffd7d7","#d6f9ff","#ffd1e1"];
   const n = prizes.length;
-  const segAngle = 2*Math.PI / n;
+  const wheel = document.getElementById("wheel");
+  const ctx = wheel.getContext("2d");
+  const DPR = window.devicePixelRatio || 1;
+  const size = 600;
+  wheel.width = wheel.height = size * DPR;
+  ctx.scale(DPR, DPR);
+  const R = size/2 * 0.8;
+  const CX = size/2, CY = size/2;
+  const segmentAngle = 2*Math.PI / n;
   let currentRotation = 0;
 
   function drawWheel(){
-    ctx.clearRect(0,0,W,H);
+    ctx.clearRect(0,0,size,size);
     ctx.save();
-    ctx.translate(CX, CY);
-    ctx.rotate(currentRotation);
-    ctx.rotate(-Math.PI/2);               // 12點方向為起點
-
+    ctx.translate(CX,CY);
+    ctx.rotate(-Math.PI/2);
     for(let i=0;i<n;i++){
-      // 區塊
       ctx.beginPath();
       ctx.moveTo(0,0);
-      ctx.fillStyle = segColors[i % segColors.length];
-      ctx.arc(0,0,R, i*segAngle, (i+1)*segAngle);
+      ctx.fillStyle = segColors[i%segColors.length];
+      ctx.arc(0,0,R,i*segmentAngle,(i+1)*segmentAngle);
       ctx.closePath(); ctx.fill();
 
-      // 文字
       ctx.save();
-      ctx.rotate(i*segAngle + segAngle/2);
-      ctx.textAlign = "center";
-      ctx.fillStyle = "#2b2b2b";
-      ctx.font = `${22*DPR}px Arial, Helvetica, sans-serif`;
-      ctx.translate(R*0.68,0);
+      ctx.rotate(i*segmentAngle + segmentAngle/2);
+      ctx.textAlign="center";
+      ctx.fillStyle="#2b2b2b";
+      ctx.font="18px Arial";
+      ctx.translate(R*0.7,0);
       ctx.rotate(Math.PI/2);
-      wrapText(ctx, prizes[i], 0, 0, R*0.42, 26*DPR);
+      wrapText(ctx,prizes[i],0,0,R*0.35,22);
       ctx.restore();
     }
     ctx.restore();
   }
 
   function wrapText(ctx,text,x,y,maxWidth,lineHeight){
-    const words = text.split(' ');
-    let line = '', yy = y;
-    for(let k=0;k<words.length;k++){
-      const test = line + words[k] + ' ';
-      if (ctx.measureText(test).width > maxWidth && k>0){
-        ctx.fillText(line,x,yy);
-        line = words[k] + ' ';
-        yy += lineHeight;
-      }else{
-        line = test;
-      }
+    const words=text.split(' ');let line='',yy=y;
+    for(let w of words){
+      const test=line+w+' ';
+      if(ctx.measureText(test).width>maxWidth && line){
+        ctx.fillText(line,x,yy);line=w+' ';yy+=lineHeight;
+      }else line=test;
     }
     ctx.fillText(line,x,yy);
   }
 
-  /************ period = 3 天 ************/
-  const PERIOD_DAYS = 3;
-
-  function periodKey3d(){
-    const now = Date.now();
-    const msPer3d = PERIOD_DAYS * 24*3600*1000;
-    return `p${Math.floor(now/msPer3d)}`;
+  // ----- Logic -----
+  const TG = window.Telegram?.WebApp;
+  if(TG){TG.expand();TG.ready();}
+  const KEY="pcd_luckywheel_v2";
+  const PERIOD_DAYS=3;
+  function periodKey(){
+    const d=new Date();
+    return Math.floor(d.getTime()/(PERIOD_DAYS*86400000));
   }
-
-  /************ 狀態（localStorage） ************/
-  const KEY = "pcd_wheel_v2";
   function loadState(){
-    const raw = JSON.parse(localStorage.getItem(KEY) || "{}");
-    const key = periodKey3d();
-    if(raw.pkey !== key){
-      return { pkey:key, used:0, bonus:0, subscribed:false, shared:false };
-    }
-    return raw;
+    const s=JSON.parse(localStorage.getItem(KEY)||"{}");
+    if(s.period!==periodKey()) return {period:periodKey(),used:0,subscribed:false,shared:false};
+    return s;
   }
-  function saveState(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
-
-  let state = loadState();
-
-  function baseAllowance(){
-    return 1 + (state.subscribed && state.shared ? 1 : 0);
-  }
-  function totalAllowance(){                 // 含 🎁 加碼
-    return baseAllowance() + (state.bonus||0);
-  }
-  function remaining(){ return Math.max(0, totalAllowance() - (state.used||0)); }
-
-  function updateRemainingUI(){
-    const el = document.getElementById("remaining");
-    el.textContent = T.remain(remaining(), PERIOD_DAYS);
-  }
-
+  let state=loadState();
+  function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+  function allowance(){return 1+(state.subscribed&&state.shared?1:0);}
+  function remaining(){return Math.max(0,allowance()-state.used);}
   function updateStatus(){
-    const s = document.getElementById("status");
-    const sub = state.subscribed ? "✅" : "❌";
-    const shr = state.shared ? "✅" : "❌";
-    s.innerHTML = `Allowance: ${totalAllowance()} (used ${state.used||0}) · subscribe/share: ${sub}/${shr}`;
+    const sub=state.subscribed?"✅":"❌",shr=state.shared?"✅":"❌";
+    status.innerHTML=`剩餘次數：${remaining()}（週期：每 ${PERIOD_DAYS} 天）<br>
+    Allowance: ${allowance()} (used ${state.used}) · subscribe/share: ${sub}/${shr}`;
   }
 
-  /************ Spin 動畫 ************/
-  let spinning = false;
   function spin(){
-    if(spinning) return;
-    if(remaining()<=0){ alert(T.usedOut); return; }
-
-    spinning = true;
-    startBtn.disabled = true;
-
-    const targetIndex = Math.floor(Math.random()*n);
-    const targetAngle = -Math.PI/2 - (targetIndex*segAngle + segAngle/2);
-    const extra = (Math.PI*2) * 6;
-    const finalRot = normalize(currentRotation + extra + shortestDelta(currentRotation, targetAngle));
-
-    const t0 = performance.now();
-    const D = 4200;
-    (function anim(t){
-      const p = Math.min(1,(t-t0)/D);
-      const ease = 1 - Math.pow(1-p,3);
-      currentRotation = currentRotation + (finalRot-currentRotation)*ease;
+    if(remaining()<=0){alert("次數已用完 / No spins left");return;}
+    startBtn.disabled=true;
+    const targetIndex=Math.floor(Math.random()*n);
+    const targetAngle=-Math.PI/2 - (targetIndex*segmentAngle+segmentAngle/2);
+    const extra=2*Math.PI*6;
+    const finalRot=currentRotation+extra+targetAngle;
+    const start=performance.now(),duration=4200;
+    function animate(t){
+      const p=Math.min(1,(t-start)/duration);
+      const ease=1-Math.pow(1-p,3);
+      currentRotation=currentRotation+(finalRot-currentRotation)*ease;
       drawWheel();
-      if(p<1){ requestAnimationFrame(anim); }
+      if(p<1) requestAnimationFrame(animate);
       else{
-        currentRotation = normalize(finalRot);
+        currentRotation%=2*Math.PI;
         drawWheel();
-        const idx = indexByRotation(currentRotation);
-        finish(prizes[idx], idx);
+        const idx=(n - Math.floor((currentRotation/(2*Math.PI))*n))%n;
+        finish(idx);
       }
-    })(t0);
-  }
-
-  function shortestDelta(from, to){
-    let d = to - (from % (2*Math.PI));
-    if(d >  Math.PI) d -= 2*Math.PI;
-    if(d < -Math.PI) d += 2*Math.PI;
-    return d;
-  }
-  function normalize(a){ a%=2*Math.PI; if(a<0) a+=2*Math.PI; return a; }
-  function indexByRotation(rot){
-    const a = normalize(rot);
-    const top = a;                     // 指針在 12 點
-    return Math.floor(((2*Math.PI - top) / segAngle)) % n;
-  }
-
-  /************ 完成一次抽獎 ************/
-  function finish(text, index){
-    state.used = (state.used||0) + 1;
-
-    // 🎁 one more chance：額外 +1（本次已用，等於淨多 0，但下次可再多一次）
-    let bonusGranted = false;
-    if (/one\s+more\s+chance/i.test(text)) {
-      state.bonus = (state.bonus||0) + 1;
-      bonusGranted = true;
     }
-
-    saveState(state);
-    updateRemainingUI();
-    updateStatus();
-    alert(T.congrats + prizes[index]);
-
-    // 回傳給 Telegram bot
-    const payload = {
-      event: "spin_result",
-      result: prizes[index],
-      index,
-      used: state.used,
-      allowance: totalAllowance(),
-      baseAllowance: baseAllowance(),
-      bonus: state.bonus||0,
-      remaining: remaining(),
-      subscribed: state.subscribed,
-      shared: state.shared,
-      bonusGranted,                   // 是否因 🎁 加過一次
-      lang: isCN ? "zh" : "en",
-      periodDays: PERIOD_DAYS,
-      periodKey: state.pkey,
-      ts: new Date().toISOString(),
-      version: "v2.0"
-    };
-    try{ tg?.sendData(JSON.stringify(payload)); }catch(e){}
-
-    startBtn.disabled = remaining()<=0;
-    spinning = false;
+    requestAnimationFrame(animate);
   }
 
-  /************ Buttons ************/
-  const startBtn = document.getElementById('startBtn');
-  const subBtn   = document.getElementById('subBtn');
-  const shareBtn = document.getElementById('shareBtn');
+  function finish(idx){
+    const result=prizes[idx];
+    if(result.includes("one more chance")){
+      alert("🎁 再來一次! +1 機會 / One more chance!");
+      state.used=Math.max(0,state.used-1);
+    }else{
+      alert("🎉 恭喜中獎 / Congratulations!\n"+result);
+      state.used++;
+    }
+    save();updateStatus();
+    if(TG){
+      TG.sendData(JSON.stringify({
+        event:"spin_result",result,index:idx,
+        used:state.used,baseAllowance:1,bonus:allowance()-1,
+        remaining:remaining(),
+        subscribed:state.subscribed,shared:state.shared,
+        periodDays:PERIOD_DAYS,periodKey:periodKey(),
+        lang:navigator.language,ts:Date.now(),version:"v2.1"
+      }));
+    }
+    startBtn.disabled=remaining()<=0;
+  }
 
-  startBtn.addEventListener('click', spin);
+  const startBtn=document.getElementById("startBtn");
+  const subBtn=document.getElementById("subBtn");
+  const shareBtn=document.getElementById("shareBtn");
+  startBtn.onclick=spin;
+  subBtn.onclick=()=>{window.open("https://t.me/pcatdolls","_blank");state.subscribed=true;save();updateStatus();};
+  shareBtn.onclick=()=>{window.open(`https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=PCD+Lucky+Wheel`,"_blank");state.shared=true;save();updateStatus();};
 
-  subBtn.addEventListener('click', () => {
-    window.open('https://t.me/pcatdolls','_blank');
-    state.subscribed = true; saveState(state);
-    updateRemainingUI(); updateStatus();
-    startBtn.disabled = remaining()<=0;
-  });
-
-  shareBtn.addEventListener('click', async () => {
-    const data = {title:'PCD Lucky Wheel', text:'Try your luck!', url:location.href};
-    try{
-      if(navigator.share){ await navigator.share(data); }
-      else{
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(data.text)}`,'_blank');
-      }
-      state.shared = true; saveState(state);
-      updateRemainingUI(); updateStatus();
-      startBtn.disabled = remaining()<=0;
-
-      // 可選：把分享事件也回傳
-      try{ tg?.sendData(JSON.stringify({event:"share", lang:isCN?"zh":"en", ts:new Date().toISOString()})); }catch(e){}
-    }catch(e){}
-  });
-
-  /************ Init ************/
-  tg?.expand(); tg?.ready();
-  drawWheel();
-  updateRemainingUI();
-  updateStatus();
-  startBtn.disabled = remaining()<=0;
-
-  // 不調整 canvas 尺寸，避免字體再計算造成跳動
+  drawWheel();updateStatus();
 })();
 </script>
 </body>
