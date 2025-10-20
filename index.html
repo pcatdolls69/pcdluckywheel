@@ -114,7 +114,30 @@
   const n = prizes.length;
   const segmentAngle = 2*Math.PI / n;
   let currentRotation = 0;
+function resizeCanvas(){
+  const vhStable = (TG && TG.viewportStableHeight) ? TG.viewportStableHeight : window.innerHeight;
+  const safeBottom = 200;
+  const maxByHeight = Math.max(260, Math.min(540, Math.floor(vhStable - safeBottom)));
 
+  const w = wrapper.clientWidth || Math.min(window.innerWidth, 560);
+  sizePx = Math.min(w, maxByHeight);
+
+  wheel.style.width  = sizePx + 'px';
+  wheel.style.height = sizePx + 'px';
+
+  DPR = Math.max(1, window.devicePixelRatio || 1);
+  wheel.width  = Math.floor(sizePx * DPR);
+  wheel.height = Math.floor(sizePx * DPR);
+
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(DPR, DPR);
+
+  CX = sizePx / 2;
+  CY = sizePx / 2;
+  R  = sizePx / 2 * 0.82;
+
+  drawWheel();
+}
   // --- Draw ---
   function wrapText(ctx,text,x,y,maxWidth,lineHeight){
     const words = text.split(' ');
@@ -287,6 +310,8 @@
 
   // init
   drawWheel();
+  resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
   updateStatus();
   startBtn.disabled = remaining()<=0;
 })();
