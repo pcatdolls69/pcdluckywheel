@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 <title>幸运转盘 / Lucky Wheel</title>
 
-<!-- 字体：英 Quicksand + 中 Noto Sans SC -->
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
@@ -16,26 +15,27 @@
     min-height:100vh; -webkit-tap-highlight-color:transparent; user-select:none;
   }
   h2{margin:10px 0 12px; text-align:center; font-weight:700}
-  .wrap{position:relative; display:flex; flex-direction:column; align-items:center}
+  .wrap{position:relative; display:flex; flex-direction:column; align-items:center; width:420px; height:420px;}
 
-  /* 固定尺寸（要更大把 360 同步改成 420/460） */
+  /* 直徑 420px（如需再改，CSS 與 HTML 屬性一起調） */
   #wheel{
-    width:360px; height:360px; display:block; background:#fff; border-radius:50%;
+    width:420px; height:420px; display:block; background:#fff; border-radius:50%;
     box-shadow:inset 0 0 0 10px rgba(107,35,157,.14), 0 6px 14px rgba(0,0,0,.08);
   }
 
-  /* 圓心深紫裝飾，不旋轉 */
+  /* 中心深紫圓心（裝飾，不轉） */
   .hub{
     position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:24%; aspect-ratio:1/1; border-radius:50%; background:#5c1898;
-    box-shadow:0 2px 6px rgba(0,0,0,.18) inset, 0 0 0 10px #fff; pointer-events:none; z-index:2;
+    width:22%; aspect-ratio:1/1; border-radius:50%; background:#5c1898;
+    box-shadow:0 2px 6px rgba(0,0,0,.18) inset, 0 0 0 10px #fff; pointer-events:none; z-index:3;
   }
 
-  /* 中心指針（SVG），固定從圓心指向 12 點，只轉盤旋轉 */
+  /* 中心三角形指針（固定 12 點；層級在最上） */
   #centerPointer{
-    position:absolute; left:0; top:0; width:360px; height:360px;
-    pointer-events:none; z-index:3;
+    position:absolute; left:0; top:0; width:420px; height:420px; pointer-events:none; z-index:4;
   }
+  #centerPointer .shadow{ filter:drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+
   /* 開始 / Start 按鈕：淡粉圓角 */
   #spinBtn{
     margin-top:14px; padding:10px 20px; border:none; border-radius:12px;
@@ -52,16 +52,14 @@
 <body>
   <h2>幸运转盘 / Lucky Wheel</h2>
 
-  <div class="wrap" style="width:360px; height:360px;">
+  <div class="wrap">
     <!-- 轉盤（只轉它） -->
-    <canvas id="wheel" width="360" height="360"></canvas>
+    <canvas id="wheel" width="420" height="420"></canvas>
 
-    <!-- 中心指針（深紫箭頭，固定 12 點），尺寸與畫布一致 -->
-    <svg id="centerPointer" viewBox="0 0 360 360" aria-hidden="true">
-      <!-- 從圓心(180,180) 指向上方 (約 y=60) 的小三角箭頭 -->
-      <polygon points="180,180 172,60 188,60" fill="#5c1898" />
-      <!-- 可選：細針身 -->
-      <rect x="178" y="60" width="4" height="120" fill="#5c1898" rx="2" />
+    <!-- 中心三角形指針（B 方案：尖端略超出圓盤） -->
+    <svg id="centerPointer" viewBox="0 0 420 420" aria-hidden="true">
+      <!-- 三角形：底邊在圓心 y=210、尖端在 y=8，寬度 40（更顯眼） -->
+      <polygon class="shadow" points="190,210 230,210 210,8" fill="#5c1898"/>
     </svg>
 
     <!-- 中央圓心裝飾 -->
@@ -81,10 +79,10 @@
   </div>
 
 <script>
-/* ===== 视觉配色（梦幻粉/紫/蓝/黄） ===== */
+/* ===== 配色（梦幻粉/紫/蓝/黄） ===== */
 const PALETTE = ['#ffd1e8','#cbb2fe','#b6e1ff','#ffe07a'];
 
-/* ===== 奖项（9 项；獎品文字保留英文） ===== */
+/* ===== 奖项（9 项；奖品文字英文；文字顏色=黑色） ===== */
 const PRIZES = [
   { text:'45⏰ or 60⏰/ 10 off', color:PALETTE[0] },
   { text:'45⏰ or 60⏰/ 20 off', color:PALETTE[1] },
@@ -104,7 +102,7 @@ const TG_USER = (isTG && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initD
 const USER_ID = TG_USER ? String(TG_USER.id) : 'guest';
 const STORAGE_KEY = 'pcd_wheel_' + USER_ID; // { lastBaseSpinISO, bonus }
 
-/* ===== 3 天限制 & 次数（本地記錄） ===== */
+/* ===== 3 天限制 & 次数 ===== */
 function readState(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {lastBaseSpinISO:null, bonus:0}; }catch(e){ return {lastBaseSpinISO:null, bonus:0}; } }
 function writeState(s){ localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
 function baseAvailable(now=new Date()){ const s=readState(); if(!s.lastBaseSpinISO) return true; return (now - new Date(s.lastBaseSpinISO)) >= 3*24*60*60*1000; }
@@ -120,9 +118,10 @@ const chancesEl = document.getElementById('chances');
 const subLink = document.getElementById('subLink');
 const shareLink = document.getElementById('shareLink');
 
-/* ===== 繪製轉盤（只轉盤、指針不動；獎品文字 = 黑色 #000） ===== */
+/* ===== 以 rotation 控制盤面；指針固定不動 ===== */
 const TOTAL = PRIZES.length;
 const ARC = Math.PI * 2 / TOTAL;
+/* 半徑：420/2 - 12 = 198（留出外圈） */
 const RADIUS = Math.min(canvas.width, canvas.height)/2 - 12;
 
 function drawWheel(rotation=0){
@@ -135,7 +134,7 @@ function drawWheel(rotation=0){
     const start = i*ARC;
     const end   = start + ARC;
 
-    // 扇形底
+    // 扇形
     ctx.beginPath();
     ctx.moveTo(0,0);
     ctx.fillStyle = PRIZES[i].color;
@@ -143,21 +142,20 @@ function drawWheel(rotation=0){
     ctx.closePath();
     ctx.fill();
 
-    // 獎品文字：黑色
+    // 奖品文字（黑色）
     ctx.save();
     ctx.rotate(start + ARC/2);
-    ctx.fillStyle = '#000'; // ✅ 改為黑色
-    ctx.font = '14px Quicksand, "Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", Arial, sans-serif';
+    ctx.fillStyle = '#000';
+    ctx.font = '15px Quicksand, "Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", Arial, sans-serif';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText(PRIZES[i].text, RADIUS - 10, 0);
+    ctx.fillText(PRIZES[i].text, RADIUS - 12, 0);
     ctx.restore();
   }
-
   ctx.restore();
 }
 
-/* 指針固定於 12 點（上方）；由 rotation 決定落點 */
+/* 指針固定於 12 點；由 rotation 決定落點 */
 function prizeIndexFromRotation(rotation){
   const norm = (rotation % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
   return Math.floor( ((Math.PI*2) - norm) / ARC ) % TOTAL;
@@ -251,8 +249,8 @@ function notify(message){
 
 /* ===== 初始化 ===== */
 window.addEventListener('load', ()=>{
-  drawWheel(0);        // 先畫一張
-  refreshChances();    // 更新次數
+  drawWheel(0);
+  refreshChances();
 });
 </script>
 </body>
