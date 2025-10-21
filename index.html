@@ -5,11 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 <title>幸运转盘 / Lucky Wheel</title>
 
-<!-- Google Fonts（英：Quicksand；中：Noto Sans SC） -->
+<!-- 字体：英 Quicksand + 中 Noto Sans SC -->
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
-  /* 页面白底 + 字体 */
   body{
     margin:0; background:#fff; color:#333;
     font-family:'Quicksand','Noto Sans SC',-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Arial,sans-serif;
@@ -19,42 +18,32 @@
   h2{margin:10px 0 12px; text-align:center; font-weight:700}
   .wrap{position:relative; display:flex; flex-direction:column; align-items:center}
 
-  /* 固定畫布尺寸（穩定）──要更大改 360 -> 420/460，CSS 與 HTML 同步 */
+  /* 固定尺寸（要更大把 360 同步改成 420/460） */
   #wheel{
     width:360px; height:360px; display:block; background:#fff; border-radius:50%;
     box-shadow:inset 0 0 0 10px rgba(107,35,157,.14), 0 6px 14px rgba(0,0,0,.08);
   }
 
-  /* 深紫色箭頭指針固定 12 点 */
-  .pointer{
-    position:absolute; top:calc(50% - 200px); left:50%; transform:translateX(-50%);
-    width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent;
-    border-bottom:26px solid #5c1898; /* 深紫 */
-    filter:drop-shadow(0 2px 2px rgba(0,0,0,.25));
-    z-index:10;
-  }
-  .pointer:after{
-    content:""; position:absolute; left:-3px; top:26px; width:6px; height:14px; background:#5c1898; border-radius:3px;
-  }
-
-  /* 中央深紫圓心（裝飾，不轉動） */
+  /* 圓心深紫裝飾，不旋轉 */
   .hub{
     position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
     width:24%; aspect-ratio:1/1; border-radius:50%; background:#5c1898;
     box-shadow:0 2px 6px rgba(0,0,0,.18) inset, 0 0 0 10px #fff; pointer-events:none; z-index:2;
   }
 
+  /* 中心指針（SVG），固定從圓心指向 12 點，只轉盤旋轉 */
+  #centerPointer{
+    position:absolute; left:0; top:0; width:360px; height:360px;
+    pointer-events:none; z-index:3;
+  }
   /* 開始 / Start 按鈕：淡粉圓角 */
   #spinBtn{
     margin-top:14px; padding:10px 20px; border:none; border-radius:12px;
     background:#f7d3e8; color:#4b0c7a; font-weight:800; font-size:16px; cursor:pointer;
   }
   #spinBtn:disabled{opacity:.6; cursor:not-allowed}
-
-  /* 剩余次數 / Chances */
   #chances{margin-top:6px; font-size:14px}
 
-  /* 底部連結與備註（雙語） */
   .links{margin-top:12px}
   .links a{color:#6b00c8; text-decoration:none; font-weight:700; margin:0 10px}
   .note{margin-top:10px; font-size:12px; color:#444; text-align:center; line-height:1.5}
@@ -63,10 +52,19 @@
 <body>
   <h2>幸运转盘 / Lucky Wheel</h2>
 
-  <div class="wrap">
-    <div class="pointer" aria-hidden="true"></div>
-    <!-- 同時設定 HTML 屬性與 CSS 尺寸，保證可見 -->
+  <div class="wrap" style="width:360px; height:360px;">
+    <!-- 轉盤（只轉它） -->
     <canvas id="wheel" width="360" height="360"></canvas>
+
+    <!-- 中心指針（深紫箭頭，固定 12 點），尺寸與畫布一致 -->
+    <svg id="centerPointer" viewBox="0 0 360 360" aria-hidden="true">
+      <!-- 從圓心(180,180) 指向上方 (約 y=60) 的小三角箭頭 -->
+      <polygon points="180,180 172,60 188,60" fill="#5c1898" />
+      <!-- 可選：細針身 -->
+      <rect x="178" y="60" width="4" height="120" fill="#5c1898" rx="2" />
+    </svg>
+
+    <!-- 中央圓心裝飾 -->
     <div class="hub" aria-hidden="true"></div>
   </div>
 
@@ -83,10 +81,10 @@
   </div>
 
 <script>
-/* ===== 视觉配色（梦幻粉/紫/蓝/黄，清楚对比） ===== */
+/* ===== 视觉配色（梦幻粉/紫/蓝/黄） ===== */
 const PALETTE = ['#ffd1e8','#cbb2fe','#b6e1ff','#ffe07a'];
 
-/* ===== 奖项（9 项；只保留英文，不做中英对照） ===== */
+/* ===== 奖项（9 项；獎品文字保留英文） ===== */
 const PRIZES = [
   { text:'45⏰ or 60⏰/ 10 off', color:PALETTE[0] },
   { text:'45⏰ or 60⏰/ 20 off', color:PALETTE[1] },
@@ -99,14 +97,14 @@ const PRIZES = [
   { text:'Sorry 😢',              color:PALETTE[0] },
 ];
 
-/* ===== Telegram 环境 ===== */
+/* ===== Telegram 环境 & 身份 ===== */
 const isTG = !!(window.Telegram && Telegram.WebApp);
 if (isTG) Telegram.WebApp.ready();
 const TG_USER = (isTG && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) || null;
 const USER_ID = TG_USER ? String(TG_USER.id) : 'guest';
 const STORAGE_KEY = 'pcd_wheel_' + USER_ID; // { lastBaseSpinISO, bonus }
 
-/* ===== 3 天限制 & 次数 ===== */
+/* ===== 3 天限制 & 次数（本地記錄） ===== */
 function readState(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {lastBaseSpinISO:null, bonus:0}; }catch(e){ return {lastBaseSpinISO:null, bonus:0}; } }
 function writeState(s){ localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
 function baseAvailable(now=new Date()){ const s=readState(); if(!s.lastBaseSpinISO) return true; return (now - new Date(s.lastBaseSpinISO)) >= 3*24*60*60*1000; }
@@ -122,21 +120,22 @@ const chancesEl = document.getElementById('chances');
 const subLink = document.getElementById('subLink');
 const shareLink = document.getElementById('shareLink');
 
-/* ===== 繪製轉盤（只轉盤、指針不動） ===== */
+/* ===== 繪製轉盤（只轉盤、指針不動；獎品文字 = 黑色 #000） ===== */
 const TOTAL = PRIZES.length;
 const ARC = Math.PI * 2 / TOTAL;
-const RADIUS = Math.min(canvas.width, canvas.height)/2 - 12; // 留外圈
+const RADIUS = Math.min(canvas.width, canvas.height)/2 - 12;
 
 function drawWheel(rotation=0){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.save();
   ctx.translate(canvas.width/2, canvas.height/2);
-  ctx.rotate(rotation); // 整盤旋轉
+  ctx.rotate(rotation); // 只旋轉盤面
+
   for(let i=0;i<TOTAL;i++){
     const start = i*ARC;
     const end   = start + ARC;
 
-    // 扇形
+    // 扇形底
     ctx.beginPath();
     ctx.moveTo(0,0);
     ctx.fillStyle = PRIZES[i].color;
@@ -144,20 +143,21 @@ function drawWheel(rotation=0){
     ctx.closePath();
     ctx.fill();
 
-    // 文字
+    // 獎品文字：黑色
     ctx.save();
     ctx.rotate(start + ARC/2);
-    ctx.fillStyle = '#333';
+    ctx.fillStyle = '#000'; // ✅ 改為黑色
     ctx.font = '14px Quicksand, "Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", Arial, sans-serif';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillText(PRIZES[i].text, RADIUS - 10, 0);
     ctx.restore();
   }
+
   ctx.restore();
 }
 
-/* 指針固定於 12 點（-90°）；由 rotation 決定落點 */
+/* 指針固定於 12 點（上方）；由 rotation 決定落點 */
 function prizeIndexFromRotation(rotation){
   const norm = (rotation % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
   return Math.floor( ((Math.PI*2) - norm) / ARC ) % TOTAL;
@@ -229,7 +229,7 @@ function onSpinDone(rotation){
     notify('恭喜中奖：' + prize.text + ' / Congratulations!');
   }
 
-  // 回传给 @pcd_luckywheel_bot（抽奖者名字 + 结果），由你的 bot 端接收 web_app_data
+  // 回传给 @pcd_luckywheel_bot（抽奖者名字 + 结果）
   const u = TG_USER;
   const name = u ? ((u.first_name||'') + (u.last_name?(' '+u.last_name):'')) : 'Guest';
   const handle = u && u.username ? ('@'+u.username) : '';
@@ -251,8 +251,8 @@ function notify(message){
 
 /* ===== 初始化 ===== */
 window.addEventListener('load', ()=>{
-  drawWheel(0);
-  refreshChances();
+  drawWheel(0);        // 先畫一張
+  refreshChances();    // 更新次數
 });
 </script>
 </body>
