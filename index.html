@@ -19,7 +19,7 @@
     html,body{height:100%}
     body{
       margin:0; padding:16px; padding-bottom:calc(16px + var(--s-bottom));
-      background:#fff; /* 白底 */
+      background:#fff;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
       color:#222; -webkit-tap-highlight-color:transparent; user-select:none;
       display:flex; align-items:center; justify-content:center;
@@ -33,9 +33,10 @@
     .title{font-weight:800; color:#1a1a1a; text-align:center}
     .muted{opacity:.8; font-size:12px}
     #wheelWrap{position:relative}
+    /* 先給 canvas 固定寬高做保險：JS 會再自適應覆蓋 */
     #wheelCanvas{
+      width:360px; height:360px;                 /* ✅ 預設尺寸 */
       display:block; background:#fff; border-radius:50%;
-      /* 外圈淡紫色邊，接近你圖片的感覺 */
       box-shadow: inset 0 0 0 10px rgba(107,35,157,.12), 0 6px 18px rgba(0,0,0,.06);
     }
     /* 深紫色指针，固定 12 点 */
@@ -50,28 +51,22 @@
       position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
       width:24%; aspect-ratio:1/1; border-radius:50%;
       background:var(--brand);
-      box-shadow:0 2px 6px rgba(0,0,0,.18) inset, 0 0 0 10px #fff; /* 白色內圈像你圖的效果 */
+      box-shadow:0 2px 6px rgba(0,0,0,.18) inset, 0 0 0 10px #fff;
       z-index:2; pointer-events:none;
     }
     .row{display:flex; align-items:center; gap:10px}
-    /* 淡粉按鈕，位於轉盤正下方 */
     #spinBtn{
       appearance:none; border:1px solid var(--line); cursor:pointer;
       border-radius:12px; padding:10px 18px; font-weight:800;
       background:var(--btn); color:#3b2156; font-size:16px; letter-spacing:.2px;
     }
     #spinBtn:disabled{opacity:.55; cursor:not-allowed}
-    .pill{
-      padding:8px 12px; border-radius:999px; background:#fafafa; border:1px solid var(--line); font-size:14px;
-      color:#333;
-    }
+    .pill{padding:8px 12px; border-radius:999px; background:#fafafa; border:1px solid var(--line); font-size:14px; color:#333;}
     .tip{min-height:38px; text-align:center; font-size:14px}
     .note{width:100%; font-size:12px; color:#444; text-align:center; line-height:1.4}
-    .sub{
-      display:inline-block; padding:8px 14px; border-radius:999px; border:1px solid var(--line);
-      background:#fff; text-decoration:none; color:#4b0082; font-weight:700;
-    }
+    .sub{display:inline-block; padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; text-decoration:none; color:#4b0082; font-weight:700;}
     .actions{display:flex; gap:12px; align-items:center; justify-content:center}
+    noscript{color:#c00; font-size:13px}
   </style>
 </head>
 <body>
@@ -82,7 +77,8 @@
 
     <div id="wheelWrap">
       <div class="pointer" aria-hidden="true"></div>
-      <canvas id="wheelCanvas"></canvas>
+      <!-- ✅ 同時給 HTML 屬性寬高，避免 0×0 -->
+      <canvas id="wheelCanvas" width="360" height="360"></canvas>
       <div class="hub" aria-hidden="true"></div>
     </div>
 
@@ -102,15 +98,16 @@
       ⚠️ 所有奖项不能重叠使用 · Prizes cannot be combined<br/>
       订阅并分享频道可多一次机会 / Subscribe &amp; Share for +1 spin
     </div>
+
+    <noscript>本页面需要启用 JavaScript / JavaScript is required.</noscript>
   </div>
 
-  <!-- Winwheel & TweenMax（1.x 版確保兼容） -->
-  <script src="https://cdn.jsdelivr.net/npm/winwheel@2.8.0/Winwheel.min.js"></script>
+  <!-- ✅ 先載 GSAP TweenMax（1.x），再載 Winwheel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/winwheel@2.8.0/Winwheel.min.js"></script>
 
   <script>
   (function(){
-    // ===== Telegram 初始化 & 跳轉 =====
     const isTG = !!(window.Telegram && Telegram.WebApp);
     if(isTG){
       Telegram.WebApp.ready();
@@ -118,18 +115,18 @@
       document.getElementById('subLink').addEventListener('click', function(e){
         e.preventDefault();
         Telegram.WebApp.openTelegramLink("https://t.me/pcatdolls");
-        addBonus(1); updateChances(); // 完成订阅给 +1
+        addBonus(1); updateChances();
       });
       document.getElementById('shareLink').addEventListener('click', function(e){
         e.preventDefault();
         try{
           if (Telegram.WebApp.shareToStory) {
-            Telegram.WebApp.shareToStory({text: 'PCD Lucky Wheel', widget_link: 'https://t.me/pcatdolls'});
+            Telegram.WebApp.shareToStory({text:'PCD Lucky Wheel', widget_link:'https://t.me/pcatdolls'});
           } else {
             Telegram.WebApp.openTelegramLink("https://t.me/pcatdolls");
           }
         }finally{
-          addBonus(1); updateChances(); // 分享也 +1
+          addBonus(1); updateChances();
         }
       });
     }else{
@@ -137,7 +134,7 @@
       document.getElementById('shareLink').setAttribute('href','https://t.me/pcatdolls');
     }
 
-    // ===== 精準尺寸 + 高 DPI（在 Mini App 內剛好）=====
+    // ===== 精準尺寸 + 高 DPI =====
     const canvas = document.getElementById('wheelCanvas');
     const ctx = canvas.getContext('2d');
     const card = document.querySelector('.card');
@@ -159,49 +156,48 @@
     function cssPx(n){ return Math.max(0, Math.floor(n)); }
 
     function layoutWheel(){
-      const vh = getViewportHeight();
-      const bodyStyle = getComputedStyle(document.body);
-      const bodyPadV = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
+      try{
+        const vh = getViewportHeight();
+        const bodyStyle = getComputedStyle(document.body);
+        const bodyPadV = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
+        const cardStyle = getComputedStyle(card);
+        const padV = parseFloat(cardStyle.paddingTop) + parseFloat(cardStyle.paddingBottom);
 
-      const cardStyle = getComputedStyle(card);
-      const padV = parseFloat(cardStyle.paddingTop) + parseFloat(cardStyle.paddingBottom);
+        const hTitle = measure(titleEl);
+        const hRow   = measure(rowEl);
+        const hTip   = measure(tipEl);
+        const hAct   = measure(actionsEl);
+        const hNote  = measure(noteEl);
+        const gaps   = 12 * 5;
 
-      const hTitle = measure(titleEl);
-      const hRow   = measure(rowEl);
-      const hTip   = measure(tipEl);
-      const hAct   = measure(actionsEl);
-      const hNote  = measure(noteEl);
-      const gaps   = 12 * 5;
+        const maxCardH = vh - bodyPadV - 8;
+        const otherHeights = padV + hTitle + hRow + hTip + hAct + hNote + gaps;
 
-      const maxCardH = vh - bodyPadV - 8;
-      const otherHeights = padV + hTitle + hRow + hTip + hAct + hNote + gaps;
+        const cardW = card.getBoundingClientRect().width;
+        const maxByHeight = Math.max(260, maxCardH - otherHeights);
+        const maxByWidth  = Math.max(260, cardW - 16*2);
+        const ideal = Math.min(maxByHeight, maxByWidth);
 
-      const cardW = card.getBoundingClientRect().width;
-      const maxByHeight = Math.max(240, maxCardH - otherHeights);
-      const maxByWidth  = Math.max(240, cardW - 16*2);
-      const ideal = Math.min(maxByHeight, maxByWidth);
+        const CSS_SIZE = cssPx(Math.max(280, Math.min(ideal, 460))); // 280–460px
 
-      // ✅ 調整這個上限就能控制最大尺寸（預設 460，更接近你截圖）
-      const CSS_SIZE = cssPx(Math.max(260, Math.min(ideal, 460)));
+        canvas.style.width  = CSS_SIZE + 'px';
+        canvas.style.height = CSS_SIZE + 'px';
+        canvas.width  = CSS_SIZE * DPR;
+        canvas.height = CSS_SIZE * DPR;
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-      canvas.style.width  = CSS_SIZE + 'px';
-      canvas.style.height = CSS_SIZE + 'px';
-      canvas.width  = CSS_SIZE * DPR;
-      canvas.height = CSS_SIZE * DPR;
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        if (window.__pcdWheel) {
+          window.__pcdWheel.outerRadius = (CSS_SIZE / 2) - 12; // 保留外圈
+          window.__pcdWheel.lineWidth = 2;
+          window.__pcdWheel.strokeStyle = 'rgba(107,35,157,.18)';
+          window.__pcdWheel.draw(false);
+        }
 
-      if (window.__pcdWheel) {
-        window.__pcdWheel.outerRadius = (CSS_SIZE / 2) - 12; // 留邊讓外圈陰影露出
-        window.__pcdWheel.lineWidth = 2;
-        window.__pcdWheel.strokeStyle = 'rgba(107,35,157,.18)'; // 淡紫描邊
-        window.__pcdWheel.draw(false);
+        const pointer = wheelWrap.querySelector('.pointer');
+        if (pointer){ pointer.style.top = '-8px'; }
+      }catch(e){
+        console.error('layoutWheel err:', e);
       }
-
-      // 指针（固定 12 点）
-      const pointer = wheelWrap.querySelector('.pointer');
-      if (pointer){ pointer.style.top = '-8px'; }
-
-      // 中央圓心大小由 CSS 百分比控制，無需在此改
     }
 
     // ===== 使用者身份 + 次數限制 =====
@@ -254,7 +250,7 @@
       $btn.disabled = totalChances() <= 0;
     }
 
-    // ===== 奖项（9 項；粉/紫/藍/黃循環）=====
+    // ===== 獎項（9 項）=====
     const segs = [
       { fillStyle:'#ffd1e8', text:'45⏰ or 60⏰/ 10 off' },
       { fillStyle:'#cbb2fe', text:'45⏰ or 60⏰/ 20 off' },
@@ -268,10 +264,14 @@
     ];
 
     // ===== 建立輪盤（半徑稍後由 layoutWheel 覆寫）=====
+    if(!window.Winwheel){
+      console.error('Winwheel 未載入');
+      return;
+    }
     const wheel = new Winwheel({
       canvasId:'wheelCanvas',
       numSegments: segs.length,
-      outerRadius: 180,
+      outerRadius: 170,
       textFontSize: 14,
       textAlignment: 'center',
       textFillStyle: '#333',
@@ -286,14 +286,14 @@
     });
     window.__pcdWheel = wheel;
 
-    // 初次布局與監聽
+    // 初次布局 & 監聽
     layoutWheel();
     updateChances();
     if (window.Telegram && Telegram.WebApp && Telegram.WebApp.onEvent){
       Telegram.WebApp.onEvent('viewportChanged', layoutWheel);
     }
     window.addEventListener('resize', layoutWheel);
-    new ResizeObserver(layoutWheel).observe(card);
+    if (window.ResizeObserver) new ResizeObserver(layoutWheel).observe(card);
 
     // ===== 旋轉流程 =====
     let spinning = false;
@@ -324,12 +324,10 @@
       const isSubscribe = /Subscribe and share channel/i.test(result);
 
       if(isOneMore){
-        addBonus(1);
-        updateChances();
+        addBonus(1); updateChances();
         notify('获得 +1 次机会 · +1 extra chance');
       }else if(isSubscribe){
-        addBonus(1);
-        updateChances();
+        addBonus(1); updateChances();
         if(isTG) Telegram.WebApp.openTelegramLink("https://t.me/pcatdolls");
         notify('订阅成功 +1 次机会 · +1 extra chance added');
       }else if(/Sorry/i.test(result)){
@@ -342,15 +340,9 @@
       const name = u ? ((u.first_name || '') + (u.last_name ? (' ' + u.last_name) : '')) : 'Guest';
       const handle = u && u.username ? ('@' + u.username) : '';
       const payload = `Winner: ${name}${handle ? ' ' + handle : ''} | Result: ${result}`;
-      if(isTG && Telegram.WebApp.sendData){
-        try { Telegram.WebApp.sendData(payload); } catch(e){}
-      }
+      if(isTG && Telegram.WebApp.sendData){ try { Telegram.WebApp.sendData(payload); } catch(e){} }
 
-      try{
-        if(isTG && Telegram.WebApp.HapticFeedback){
-          Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-        }
-      }catch(e){}
+      try{ if(isTG && Telegram.WebApp.HapticFeedback){ Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } }catch(e){}
     }
 
     function notify(message){
