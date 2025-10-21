@@ -2,257 +2,222 @@
 <html lang="zh-Hans">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>幸运转盘 / Lucky Wheel</title>
-
-<!-- Google Fonts（英：Quicksand；中：Noto Sans SC） -->
-<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
-
 <style>
-  /* 页面白底 + 字体 */
   body{
-    margin:0; background:#fff; color:#333;
-    font-family:'Quicksand','Noto Sans SC',-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Arial,sans-serif;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    min-height:100vh; -webkit-tap-highlight-color:transparent; user-select:none;
+    margin:0; color:#333;
+    font-family:'Noto Sans SC', Arial, sans-serif;
+    background: linear-gradient(180deg, #fde6ff 0%, #e4f2ff 100%);
+    display:flex; flex-direction:column; align-items:center; min-height:100vh;
   }
-  h2{margin:10px 0 12px; text-align:center; font-weight:700}
-  .wrap{position:relative; display:flex; flex-direction:column; align-items:center}
+  h2{margin:20px 0 10px}
+  #wheel-container{position:relative; width:420px; height:420px; margin-top:10px}
+  canvas{
+    width:100%; height:100%; border-radius:50%;
+    box-shadow: 0 0 30px rgba(255,255,255,.85), 0 0 60px rgba(255,200,255,.6);
+    background:#fff;
+  }
+  #centerPointer{position:absolute; inset:0; pointer-events:none}
+  #centerPointer polygon{fill:#4b0082}
 
-  /* 固定畫布尺寸（穩定）──要更大改 360 -> 420/460，CSS 與 HTML 同步 */
-  #wheel{
-    width:360px; height:360px; display:block; background:#fff; border-radius:50%;
-    box-shadow:inset 0 0 0 10px rgba(107,35,157,.14), 0 6px 14px rgba(0,0,0,.08);
-  }
-
-  /* 深紫色箭頭指針固定 12 点 */
-  .pointer{
-    position:absolute; top:calc(50% - 200px); left:50%; transform:translateX(-50%);
-    width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent;
-    border-bottom:26px solid #5c1898; /* 深紫 */
-    filter:drop-shadow(0 2px 2px rgba(0,0,0,.25));
-    z-index:10;
-  }
-  .pointer:after{
-    content:""; position:absolute; left:-3px; top:26px; width:6px; height:14px; background:#5c1898; border-radius:3px;
-  }
-
-  /* 中央深紫圓心（裝飾，不轉動） */
-  .hub{
-    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:24%; aspect-ratio:1/1; border-radius:50%; background:#5c1898;
-    box-shadow:0 2px 6px rgba(0,0,0,.18) inset, 0 0 0 10px #fff; pointer-events:none; z-index:2;
-  }
-
-  /* 開始 / Start 按鈕：淡粉圓角 */
+  /* 主按钮：粉紫渐变，圆角 */
   #spinBtn{
-    margin-top:14px; padding:10px 20px; border:none; border-radius:12px;
-    background:#f7d3e8; color:#4b0c7a; font-weight:800; font-size:16px; cursor:pointer;
+    margin-top:20px; padding:14px 32px; font-size:18px; color:#fff; border:0; border-radius:16px;
+    background: linear-gradient(90deg, #e8b3ff, #bcd2ff);
+    box-shadow: 0 4px 10px rgba(0,0,0,.15); cursor:pointer;
   }
-  #spinBtn:disabled{opacity:.6; cursor:not-allowed}
+  #spinBtn:active{transform:scale(.98)}
+  #status{margin-top:10px; font-size:14px}
 
-  /* 剩余次數 / Chances */
-  #chances{margin-top:6px; font-size:14px}
+  /* 订阅 / 分享 区块 */
+  .cta{
+    display:flex; gap:12px; margin-top:14px;
+  }
+  .cta button{
+    padding:10px 16px; border-radius:12px; border:2px solid #d0b3ff; background:#fff; color:#4b0c7a;
+    font-weight:700; cursor:pointer;
+  }
+  .cta button:active{transform:scale(.98)}
 
-  /* 底部連結與備註（雙語） */
-  .links{margin-top:12px}
-  .links a{color:#6b00c8; text-decoration:none; font-weight:700; margin:0 10px}
-  .note{margin-top:10px; font-size:12px; color:#444; text-align:center; line-height:1.5}
+  /* 底部注意 */
+  #footer{margin:18px 0 24px; text-align:center; font-size:13px}
+  #footer a{color:#6a00cc; font-weight:700; text-decoration:none}
 </style>
 </head>
 <body>
-  <h2>幸运转盘 / Lucky Wheel</h2>
 
-  <div class="wrap">
-    <div class="pointer" aria-hidden="true"></div>
-    <!-- 同時設定 HTML 屬性與 CSS 尺寸，保證可見 -->
-    <canvas id="wheel" width="360" height="360"></canvas>
-    <div class="hub" aria-hidden="true"></div>
-  </div>
+<h2>幸运转盘 / Lucky Wheel</h2>
 
-  <button id="spinBtn">🎯 开始 / Start</button>
-  <div id="chances">剩余次数 / Chances: --</div>
+<div id="wheel-container">
+  <canvas id="wheel" width="420" height="420"></canvas>
+  <!-- 中心深紫三角指针（从中心指向 12 点，尖端略超出圆盘） -->
+  <svg id="centerPointer" viewBox="0 0 420 420" aria-hidden="true">
+    <polygon points="195,210 225,210 210,16"></polygon>
+  </svg>
+</div>
 
-  <div class="links">
-    <a id="subLink" href="#">订阅 / Subscribe</a>
-    <a id="shareLink" href="#">分享 / Share</a>
-  </div>
+<button id="spinBtn">开始抽奖 / Start</button>
+<div id="status">剩余次数 / Chances: <span id="chances">3</span></div>
 
-  <div class="note">
-    ⚠️ 所有奖项不能重叠使用 / Prizes cannot be combined
-  </div>
+<div class="cta">
+  <button id="subBtn">🔗 订阅 / Subscribe（+1）</button>
+  <button id="shareBtn">🔗 分享 / Share（+1）</button>
+</div>
+
+<div id="footer">
+  ⚠️ 所有奖项不能重叠使用 / All prizes cannot be combined<br>
+  <a href="https://t.me/pcatdolls" target="_blank">pcatdolls 频道 / Channel</a>
+</div>
 
 <script>
-/* ===== 视觉配色（梦幻粉/紫/蓝/黄，清楚对比） ===== */
-const PALETTE = ['#ffd1e8','#cbb2fe','#b6e1ff','#ffe07a'];
-
-/* ===== 奖项（9 项；只保留英文，不做中英对照） ===== */
-const PRIZES = [
-  { text:'45⏰ or 60⏰/ 10 off', color:PALETTE[0] },
-  { text:'45⏰ or 60⏰/ 20 off', color:PALETTE[1] },
-  { text:'One more spin chance', color:PALETTE[2], bonus:true },
-  { text:'45⏰ or 60⏰/ 10 off', color:PALETTE[3] },
-  { text:'Sorry 😢',              color:PALETTE[0] },
-  { text:'45⏰ or 60⏰/ 20 off', color:PALETTE[1] },
-  { text:'Sorry 😢',              color:PALETTE[2] },
-  { text:'45⏰ or 60⏰/ 40 off', color:PALETTE[3] },
-  { text:'Sorry 😢',              color:PALETTE[0] },
-];
-
-/* ===== Telegram 环境 ===== */
+/* ===== Telegram Mini App 初始化 ===== */
 const isTG = !!(window.Telegram && Telegram.WebApp);
 if (isTG) Telegram.WebApp.ready();
-const TG_USER = (isTG && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) || null;
-const USER_ID = TG_USER ? String(TG_USER.id) : 'guest';
-const STORAGE_KEY = 'pcd_wheel_' + USER_ID; // { lastBaseSpinISO, bonus }
 
-/* ===== 3 天限制 & 次数 ===== */
-function readState(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {lastBaseSpinISO:null, bonus:0}; }catch(e){ return {lastBaseSpinISO:null, bonus:0}; } }
-function writeState(s){ localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
-function baseAvailable(now=new Date()){ const s=readState(); if(!s.lastBaseSpinISO) return true; return (now - new Date(s.lastBaseSpinISO)) >= 3*24*60*60*1000; }
-function totalChances(){ const s=readState(); return (baseAvailable()?1:0) + (s.bonus|0); }
-function consumeOne(){ const s=readState(); if(s.bonus>0) s.bonus--; else s.lastBaseSpinISO = new Date().toISOString(); writeState(s); }
-function addBonus(n=1){ const s=readState(); s.bonus=(s.bonus|0)+n; writeState(s); }
+/* ===== 轮盘数据 ===== */
+const prizes = [
+  "45⏰ or 60⏰ / 10 OFF",
+  "45⏰ or 60⏰ / 20 OFF",
+  "One more spin chance",
+  "45⏰ or 60⏰ / 10 OFF",
+  "Sorry 😢",
+  "45⏰ or 60⏰ / 20 OFF",
+  "Sorry 😢",
+  "45⏰ or 60⏰ / 40 OFF",
+  "Sorry 😢"
+];
+const colors = ["#ffd1e8","#cbb2fe","#b6e1ff","#ffe07a","#ffd1e8","#cbb2fe","#b6e1ff","#ffe07a","#ffd1e8"];
 
-/* ===== DOM ===== */
+let chances = 3; // 初始次数（可按需改）
 const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
-const spinBtn = document.getElementById('spinBtn');
-const chancesEl = document.getElementById('chances');
-const subLink = document.getElementById('subLink');
-const shareLink = document.getElementById('shareLink');
 
-/* ===== 繪製轉盤（只轉盤、指針不動） ===== */
-const TOTAL = PRIZES.length;
-const ARC = Math.PI * 2 / TOTAL;
-const RADIUS = Math.min(canvas.width, canvas.height)/2 - 12; // 留外圈
-
-function drawWheel(rotation=0){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.save();
-  ctx.translate(canvas.width/2, canvas.height/2);
-  ctx.rotate(rotation); // 整盤旋轉
-  for(let i=0;i<TOTAL;i++){
-    const start = i*ARC;
-    const end   = start + ARC;
+function drawWheel(angleOffset = 0) {
+  const cx = 210, cy = 210, r = 200;
+  const n = prizes.length;
+  const arc = 2*Math.PI / n;
+  ctx.clearRect(0,0,420,420);
+  for (let i=0;i<n;i++){
+    const start = i*arc + angleOffset;
+    const end = start + arc;
 
     // 扇形
     ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.fillStyle = PRIZES[i].color;
-    ctx.arc(0,0,RADIUS,start,end,false);
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,end);
     ctx.closePath();
+    ctx.fillStyle = colors[i];
     ctx.fill();
 
-    // 文字
+    // 文案（黑色）
     ctx.save();
-    ctx.rotate(start + ARC/2);
-    ctx.fillStyle = '#333';
-    ctx.font = '14px Quicksand, "Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", Arial, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(PRIZES[i].text, RADIUS - 10, 0);
+    ctx.translate(cx,cy);
+    ctx.rotate(start + arc/2);
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#000";                          // ✅ 黑色
+    ctx.font = "bold 16px Arial, 'Noto Sans SC', sans-serif";
+    ctx.fillText(prizes[i], r-20, 0);
     ctx.restore();
   }
-  ctx.restore();
 }
+drawWheel();
 
-/* 指針固定於 12 點（-90°）；由 rotation 決定落點 */
-function prizeIndexFromRotation(rotation){
-  const norm = (rotation % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
-  return Math.floor( ((Math.PI*2) - norm) / ARC ) % TOTAL;
+/* ===== 抽奖 ===== */
+const spinBtn = document.getElementById('spinBtn');
+const chancesEl = document.getElementById('chances');
+
+function updateChances() {
+  chancesEl.textContent = chances;
+  spinBtn.disabled = chances <= 0;
 }
+updateChances();
 
-/* ===== UI（双语） ===== */
-function refreshChances(){
-  const t = totalChances();
-  chancesEl.textContent = '剩余次数 / Chances: ' + t;
-  spinBtn.disabled = t <= 0;
-}
-subLink.addEventListener('click', e=>{
-  e.preventDefault();
-  if (isTG) Telegram.WebApp.openTelegramLink('https://t.me/pcatdolls');
-  addBonus(1); refreshChances();
-});
-shareLink.addEventListener('click', e=>{
-  e.preventDefault();
-  try{
-    if (isTG && Telegram.WebApp.shareToStory) {
-      Telegram.WebApp.shareToStory({text:'Lucky Wheel', widget_link:'https://t.me/pcatdolls'});
-    } else if (isTG) {
-      Telegram.WebApp.openTelegramLink('https://t.me/pcatdolls');
-    }
-  } finally {
-    addBonus(1); refreshChances();
-  }
-});
-
-/* ===== 旋轉動畫 ===== */
-let spinning = false;
-spinBtn.addEventListener('click', ()=>{
-  if (spinning) return;
-  if (totalChances() <= 0){
-    const msg = '每人 3 天可转 1 次 / One spin every 3 days；订阅/分享或抽到 “One more spin chance” 可 +1 次 / Subscribe, Share, or land on the bonus tile for +1 chance.';
+spinBtn.addEventListener('click', () => {
+  if (chances <= 0) {
+    const msg = "每人一次 / No more chances.\n订阅或分享可获得 +1 / Subscribe or Share to get +1.";
     if (isTG && Telegram.WebApp.showAlert) Telegram.WebApp.showAlert(msg); else alert(msg);
     return;
   }
-  spinning = true;
-  consumeOne(); refreshChances();
+  chances--; updateChances();
 
-  const spinDeg = (360*4) + Math.random()*360; // 至少 4 圈
-  const spinRad = spinDeg * Math.PI/180;
-  const startTs = performance.now();
-  const duration = 4500;
+  const spinAngle = 360*5 + Math.random()*360; // 五圈以上
+  const duration = 4200;
+  const start = performance.now();
 
-  function frame(now){
-    const p = Math.min((now - startTs)/duration, 1);
-    const ease = 1 - Math.pow(1-p, 3); // 缓出
-    const rot = ease * spinRad;
-    drawWheel(rot);
-    if (p < 1) requestAnimationFrame(frame);
-    else { onSpinDone(rot); spinning = false; }
+  function step(now){
+    const p = Math.min((now-start)/duration, 1);
+    const ease = 1 - Math.pow(1-p,3); // 缓出
+    drawWheel(ease * spinAngle * Math.PI/180);
+    if (p < 1) requestAnimationFrame(step);
+    else onDone(spinAngle);
   }
-  requestAnimationFrame(frame);
+  requestAnimationFrame(step);
 });
 
-/* ===== 結果處理 & 回傳給 bot ===== */
-function onSpinDone(rotation){
-  const idx = prizeIndexFromRotation(rotation);
-  const prize = PRIZES[idx];
+function onDone(spinAngleDeg){
+  // 计算中奖项（与 12 点方向对齐）
+  const n = prizes.length;
+  const raw = (spinAngleDeg % 360) / 360;           // 0..1
+  const idx = (n - 1 - Math.floor(raw * n)) % n;    // 指针在上方，角度越大索引越小
+  const result = prizes[idx];
 
-  if (prize.bonus) {
-    addBonus(1); refreshChances();
-    notify('获得 +1 次机会 / +1 extra chance');
-  } else if (/Sorry/i.test(prize.text)) {
-    notify('谢谢参与 / Thanks for playing');
-  } else {
-    notify('恭喜中奖：' + prize.text + ' / Congratulations!');
-  }
-
-  // 回传给 @pcd_luckywheel_bot（抽奖者名字 + 结果），由你的 bot 端接收 web_app_data
-  const u = TG_USER;
-  const name = u ? ((u.first_name||'') + (u.last_name?(' '+u.last_name):'')) : 'Guest';
-  const handle = u && u.username ? ('@'+u.username) : '';
-  const payload = `Winner: ${name}${handle?' '+handle:''} | Result: ${prize.text}`;
-  if (isTG && Telegram.WebApp.sendData) { try{ Telegram.WebApp.sendData(payload); }catch(e){} }
-
-  try{ if(isTG && Telegram.WebApp.HapticFeedback){ Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } }catch(e){}
-}
-
-function notify(message){
+  // 弹窗（中英）
+  const msg = /Sorry/.test(result)
+    ? "谢谢参与 / Thanks for playing"
+    : "恭喜中奖 / Congratulations!\n" + result;
   if (isTG && Telegram.WebApp.showPopup) {
-    Telegram.WebApp.showPopup({title:'幸运转盘 / Lucky Wheel', message, buttons:[{type:'ok', id:'ok'}]});
+    Telegram.WebApp.showPopup({title:"幸运转盘 / Lucky Wheel", message:msg, buttons:[{type:'ok', id:'ok'}]});
   } else if (isTG && Telegram.WebApp.showAlert) {
-    Telegram.WebApp.showAlert(message);
+    Telegram.WebApp.showAlert(msg);
   } else {
-    alert(message);
+    alert(msg);
   }
+
+  // “One more spin chance” +1
+  if (/One more spin chance/i.test(result)) { chances++; updateChances(); }
+
+  // 回传给你的 bot（Mini App）
+  if (isTG && Telegram.WebApp.sendData) {
+    try {
+      // 如果可取得用户名，把名字一起回传
+      const u = Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user;
+      const name = u ? ((u.first_name||'') + (u.last_name?(' '+u.last_name):'')) : 'Guest';
+      const handle = u && u.username ? ('@'+u.username) : '';
+      Telegram.WebApp.sendData(`Winner: ${name}${handle?' '+handle:''} | Result: ${result}`);
+    } catch(e){}
+  }
+
+  // （可选）直接发到 @pcd_luckywheel_bot 频道/群 —— 用你的 Token 替换
+  fetch("https://api.telegram.org/bot7779859704:AAHwAPPUhTQQRwVJ1FeGJUuY6BJ5vBmFths/sendMessage", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: "@pcd_luckywheel_bot",
+      text: `🎯 抽奖结果 / Result: ${result}`
+    })
+  }).catch(()=>{});
 }
 
-/* ===== 初始化 ===== */
-window.addEventListener('load', ()=>{
-  drawWheel(0);
-  refreshChances();
+/* ===== 订阅 & 分享：各 +1 ===== */
+document.getElementById('subBtn').addEventListener('click', () => {
+  if (isTG) Telegram.WebApp.openTelegramLink('https://t.me/pcatdolls');
+  chances++; updateChances();
+});
+
+document.getElementById('shareBtn').addEventListener('click', () => {
+  try{
+    if (isTG && Telegram.WebApp.shareToStory) {
+      Telegram.WebApp.shareToStory({text:'PCD Lucky Wheel', widget_link:'https://t.me/pcatdolls'});
+    } else if (isTG) {
+      Telegram.WebApp.openTelegramLink('https://t.me/pcatdolls');
+    } else {
+      window.open('https://t.me/pcatdolls','_blank');
+    }
+  } finally {
+    chances++; updateChances();
+  }
 });
 </script>
 </body>
