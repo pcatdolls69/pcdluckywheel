@@ -6,10 +6,13 @@
   <title>PCD Lucky Wheel</title>
   <style>
     :root{
+      /* 夢幻配色（清楚對比） */
       --pink:#ffd1e8; --purple:#cbb2fe; --blue:#b6e1ff; --yellow:#ffe07a;
-      --brand:#6b239d;            /* 深紫（指针/重点） */
-      --btn:#f7d3e8;              /* 淡粉 Start 按钮 */
+      --brand:#6b239d;   /* 深紫（指针/重點） */
+      --btn:#f7d3e8;     /* 淡粉 Start 按鈕 */
       --line:#e6e6e6;
+
+      /* 安全區 */
       --s-top: env(safe-area-inset-top, 0px);
       --s-right: env(safe-area-inset-right, 0px);
       --s-bottom: env(safe-area-inset-bottom, 0px);
@@ -19,7 +22,7 @@
     html,body{height:100%}
     body{
       margin:0; padding:16px; padding-bottom:calc(16px + var(--s-bottom));
-      background:#fff;
+      background:#fff;  /* 白底 */
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
       color:#222; -webkit-tap-highlight-color:transparent; user-select:none;
       display:flex; align-items:center; justify-content:center;
@@ -32,21 +35,23 @@
     }
     .title{font-weight:800; color:#1a1a1a; text-align:center}
     .muted{opacity:.8; font-size:12px}
+
     #wheelWrap{position:relative}
-    /* 先給 canvas 固定寬高做保險：JS 會再自適應覆蓋 */
+    /* 先給保險尺寸，JS 會再自適應覆蓋 */
     #wheelCanvas{
-      width:360px; height:360px;                 /* ✅ 預設尺寸 */
+      width:360px; height:360px;
       display:block; background:#fff; border-radius:50%;
+      /* 外圈淡紫邊 + 陰影，對比清楚 */
       box-shadow: inset 0 0 0 10px rgba(107,35,157,.12), 0 6px 18px rgba(0,0,0,.06);
     }
-    /* 深紫色指针，固定 12 点 */
+    /* 深紫色三角指針固定 12 點 */
     .pointer{
       position:absolute; top:-8px; left:50%; transform:translateX(-50%);
       width:0; height:0; border-left:12px solid transparent; border-right:12px solid transparent; border-bottom:22px solid var(--brand);
       filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));
       z-index:3;
     }
-    /* 中央圓心（不轉動） */
+    /* 中央深紫圓心（不轉動） */
     .hub{
       position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
       width:24%; aspect-ratio:1/1; border-radius:50%;
@@ -54,18 +59,23 @@
       box-shadow:0 2px 6px rgba(0,0,0,.18) inset, 0 0 0 10px #fff;
       z-index:2; pointer-events:none;
     }
+
     .row{display:flex; align-items:center; gap:10px}
+    /* Start 按鈕（淡粉）放在轉盤正下方 */
     #spinBtn{
       appearance:none; border:1px solid var(--line); cursor:pointer;
       border-radius:12px; padding:10px 18px; font-weight:800;
       background:var(--btn); color:#3b2156; font-size:16px; letter-spacing:.2px;
     }
     #spinBtn:disabled{opacity:.55; cursor:not-allowed}
-    .pill{padding:8px 12px; border-radius:999px; background:#fafafa; border:1px solid var(--line); font-size:14px; color:#333;}
+
+    .pill{
+      padding:8px 12px; border-radius:999px; background:#fafafa; border:1px solid var(--line); font-size:14px; color:#333;
+    }
     .tip{min-height:38px; text-align:center; font-size:14px}
-    .note{width:100%; font-size:12px; color:#444; text-align:center; line-height:1.4}
     .sub{display:inline-block; padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; text-decoration:none; color:#4b0082; font-weight:700;}
     .actions{display:flex; gap:12px; align-items:center; justify-content:center}
+    .note{width:100%; font-size:12px; color:#444; text-align:center; line-height:1.4}
     noscript{color:#c00; font-size:13px}
   </style>
 </head>
@@ -77,7 +87,6 @@
 
     <div id="wheelWrap">
       <div class="pointer" aria-hidden="true"></div>
-      <!-- ✅ 同時給 HTML 屬性寬高，避免 0×0 -->
       <canvas id="wheelCanvas" width="360" height="360"></canvas>
       <div class="hub" aria-hidden="true"></div>
     </div>
@@ -94,6 +103,7 @@
       <a id="shareLink" class="sub" href="#" role="link">Share / 分享</a>
     </div>
 
+    <!-- ✅ 只有最下面雙語（簡體＋英文） -->
     <div class="note">
       ⚠️ 所有奖项不能重叠使用 · Prizes cannot be combined<br/>
       订阅并分享频道可多一次机会 / Subscribe &amp; Share for +1 spin
@@ -102,19 +112,22 @@
     <noscript>本页面需要启用 JavaScript / JavaScript is required.</noscript>
   </div>
 
-  <!-- ✅ 先載 GSAP TweenMax（1.x），再載 Winwheel -->
+  <!-- 先載 GSAP 1.x，再載 Winwheel（順序很重要） -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/winwheel@2.8.0/Winwheel.min.js"></script>
 
   <script>
   (function(){
+    /* ========== Telegram 初始化 & 跳轉/加次數 ========== */
     const isTG = !!(window.Telegram && Telegram.WebApp);
     if(isTG){
       Telegram.WebApp.ready();
       Telegram.WebApp.expand && Telegram.WebApp.expand();
+
       document.getElementById('subLink').addEventListener('click', function(e){
         e.preventDefault();
         Telegram.WebApp.openTelegramLink("https://t.me/pcatdolls");
+        // 完成訂閱給 +1（UI 即時更新）
         addBonus(1); updateChances();
       });
       document.getElementById('shareLink').addEventListener('click', function(e){
@@ -126,15 +139,17 @@
             Telegram.WebApp.openTelegramLink("https://t.me/pcatdolls");
           }
         }finally{
+          // 分享也 +1
           addBonus(1); updateChances();
         }
       });
     }else{
+      // 瀏覽器測試用：正常連結亦能加次數（可改成僅提示）
       document.getElementById('subLink').setAttribute('href','https://t.me/pcatdolls');
       document.getElementById('shareLink').setAttribute('href','https://t.me/pcatdolls');
     }
 
-    // ===== 精準尺寸 + 高 DPI =====
+    /* ========== 精準尺寸 + 高 DPI（Mini App 手機最適） ========== */
     const canvas = document.getElementById('wheelCanvas');
     const ctx = canvas.getContext('2d');
     const card = document.querySelector('.card');
@@ -156,51 +171,51 @@
     function cssPx(n){ return Math.max(0, Math.floor(n)); }
 
     function layoutWheel(){
-      try{
-        const vh = getViewportHeight();
-        const bodyStyle = getComputedStyle(document.body);
-        const bodyPadV = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
-        const cardStyle = getComputedStyle(card);
-        const padV = parseFloat(cardStyle.paddingTop) + parseFloat(cardStyle.paddingBottom);
+      const vh = getViewportHeight();
+      const bodyStyle = getComputedStyle(document.body);
+      const bodyPadV = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
+      const cardStyle = getComputedStyle(card);
+      const padV = parseFloat(cardStyle.paddingTop) + parseFloat(cardStyle.paddingBottom);
 
-        const hTitle = measure(titleEl);
-        const hRow   = measure(rowEl);
-        const hTip   = measure(tipEl);
-        const hAct   = measure(actionsEl);
-        const hNote  = measure(noteEl);
-        const gaps   = 12 * 5;
+      const hTitle = measure(titleEl);
+      const hRow   = measure(rowEl);
+      const hTip   = measure(tipEl);
+      const hAct   = measure(actionsEl);
+      const hNote  = measure(noteEl);
+      const gaps   = 12 * 5;
 
-        const maxCardH = vh - bodyPadV - 8;
-        const otherHeights = padV + hTitle + hRow + hTip + hAct + hNote + gaps;
+      const maxCardH = vh - bodyPadV - 8;
+      const otherHeights = padV + hTitle + hRow + hTip + hAct + hNote + gaps;
 
-        const cardW = card.getBoundingClientRect().width;
-        const maxByHeight = Math.max(260, maxCardH - otherHeights);
-        const maxByWidth  = Math.max(260, cardW - 16*2);
-        const ideal = Math.min(maxByHeight, maxByWidth);
+      const cardW = card.getBoundingClientRect().width;
+      const maxByHeight = Math.max(260, maxCardH - otherHeights);
+      const maxByWidth  = Math.max(260, cardW - 16*2);
+      const ideal = Math.min(maxByHeight, maxByWidth);
 
-        const CSS_SIZE = cssPx(Math.max(280, Math.min(ideal, 460))); // 280–460px
+      // 上限 460（想更大改這裡）
+      const CSS_SIZE = cssPx(Math.max(280, Math.min(ideal, 460)));
 
-        canvas.style.width  = CSS_SIZE + 'px';
-        canvas.style.height = CSS_SIZE + 'px';
-        canvas.width  = CSS_SIZE * DPR;
-        canvas.height = CSS_SIZE * DPR;
-        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      // 設置 CSS 尺寸 + 高 DPI
+      canvas.style.width  = CSS_SIZE + 'px';
+      canvas.style.height = CSS_SIZE + 'px';
+      canvas.width  = CSS_SIZE * DPR;
+      canvas.height = CSS_SIZE * DPR;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-        if (window.__pcdWheel) {
-          window.__pcdWheel.outerRadius = (CSS_SIZE / 2) - 12; // 保留外圈
-          window.__pcdWheel.lineWidth = 2;
-          window.__pcdWheel.strokeStyle = 'rgba(107,35,157,.18)';
-          window.__pcdWheel.draw(false);
-        }
-
-        const pointer = wheelWrap.querySelector('.pointer');
-        if (pointer){ pointer.style.top = '-8px'; }
-      }catch(e){
-        console.error('layoutWheel err:', e);
+      // 更新輪盤半徑並重畫
+      if (window.__pcdWheel) {
+        window.__pcdWheel.outerRadius = (CSS_SIZE / 2) - 12; // 留外圈
+        window.__pcdWheel.lineWidth = 2;
+        window.__pcdWheel.strokeStyle = 'rgba(107,35,157,.18)';
+        window.__pcdWheel.draw(false);
       }
+
+      // 指針固定在 12 點
+      const pointer = wheelWrap.querySelector('.pointer');
+      if (pointer){ pointer.style.top = '-8px'; }
     }
 
-    // ===== 使用者身份 + 次數限制 =====
+    /* ========== 身分/次數（3 天 1 次；bonus 可疊加） ========== */
     const userObj = (isTG && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) || null;
     const userId = userObj ? String(userObj.id) : 'guest';
     const userName = userObj ? ((userObj.first_name || '') + (userObj.last_name ? (' ' + userObj.last_name) : '')) : 'Guest';
@@ -208,21 +223,18 @@
     const STORAGE_KEY = 'pcd_wheel_' + userId;
 
     function readState(){
-      try {
+      try{
         const raw = localStorage.getItem(STORAGE_KEY);
         if(!raw) return { lastBaseSpinISO: null, bonus: 0 };
         const obj = JSON.parse(raw);
         return { lastBaseSpinISO: obj.lastBaseSpinISO || null, bonus: obj.bonus|0 };
-      } catch(e){
-        return { lastBaseSpinISO: null, bonus: 0 };
-      }
+      }catch(e){ return { lastBaseSpinISO: null, bonus: 0 }; }
     }
     function writeState(s){ localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
     function baseAvailable(now = new Date()){
       const st = readState();
       if(!st.lastBaseSpinISO) return true;
-      const diff = now - new Date(st.lastBaseSpinISO);
-      return diff >= 3*24*60*60*1000; // 3 天
+      return (now - new Date(st.lastBaseSpinISO)) >= 3*24*60*60*1000; // 3 天
     }
     function totalChances(){
       const st = readState();
@@ -240,7 +252,7 @@
       writeState(st);
     }
 
-    // ===== UI =====
+    // UI
     const $btn = document.getElementById('spinBtn');
     const $chance = document.getElementById('chance');
     const $tip = document.getElementById('tip');
@@ -250,24 +262,24 @@
       $btn.disabled = totalChances() <= 0;
     }
 
-    // ===== 獎項（9 項）=====
+    /* ========== 獎項（9 項；粉/紫/藍/黃循環） ========== */
     const segs = [
-      { fillStyle:'#ffd1e8', text:'45⏰ or 60⏰/ 10 off' },
-      { fillStyle:'#cbb2fe', text:'45⏰ or 60⏰/ 20 off' },
-      { fillStyle:'#b6e1ff', text:'One more spin chance' },
-      { fillStyle:'#ffe07a', text:'45⏰ or 60⏰/ 10 off' },
-      { fillStyle:'#ffd1e8', text:'Sorry 😢' },
-      { fillStyle:'#cbb2fe', text:'45⏰ or 60⏰/ 20 off' },
-      { fillStyle:'#b6e1ff', text:'Sorry 😢' },
-      { fillStyle:'#ffe07a', text:'45⏰ or 60⏰/ 40 off' },
-      { fillStyle:'#ffd1e8', text:'45⏰ or 60⏰/ 20 off' }
+      { fillStyle: getColor(0), text:'45⏰ or 60⏰/ 10 off' },
+      { fillStyle: getColor(1), text:'45⏰ or 60⏰/ 20 off' },
+      { fillStyle: getColor(2), text:'One more spin chance' },
+      { fillStyle: getColor(3), text:'45⏰ or 60⏰/ 10 off' },
+      { fillStyle: getColor(0), text:'Sorry 😢' },
+      { fillStyle: getColor(1), text:'45⏰ or 60⏰/ 20 off' },
+      { fillStyle: getColor(2), text:'Sorry 😢' },
+      { fillStyle: getColor(3), text:'45⏰ or 60⏰/ 40 off' },
+      { fillStyle: getColor(0), text:'Sorry 😢' }
     ];
-
-    // ===== 建立輪盤（半徑稍後由 layoutWheel 覆寫）=====
-    if(!window.Winwheel){
-      console.error('Winwheel 未載入');
-      return;
+    function getColor(i){
+      const c = [ '--pink', '--purple', '--blue', '--yellow' ];
+      return getComputedStyle(document.documentElement).getPropertyValue(c[i%4]).trim();
     }
+
+    // 建立輪盤（半徑稍後由 layoutWheel 覆寫）
     const wheel = new Winwheel({
       canvasId:'wheelCanvas',
       numSegments: segs.length,
@@ -286,7 +298,7 @@
     });
     window.__pcdWheel = wheel;
 
-    // 初次布局 & 監聽
+    // 首次布局 & 監聽
     layoutWheel();
     updateChances();
     if (window.Telegram && Telegram.WebApp && Telegram.WebApp.onEvent){
@@ -295,12 +307,12 @@
     window.addEventListener('resize', layoutWheel);
     if (window.ResizeObserver) new ResizeObserver(layoutWheel).observe(card);
 
-    // ===== 旋轉流程 =====
+    /* ========== 旋轉流程 ========== */
     let spinning = false;
     $btn.addEventListener('click', () => {
       if(spinning) return;
       if(totalChances() <= 0){
-        const msg = '每人 3 天可转 1 次；抽到「One more spin chance / Subscribe and share channel」可加 1 次。\nOne spin every 3 days. Landing on bonus tiles grants +1 chance.';
+        const msg = '每人 3 天可转 1 次；抽到「One more spin chance」或点击底部 Subscribe/Share 可加 1 次。\nOne spin every 3 days. Landing on the bonus tile or tapping Subscribe/Share grants +1 chance.';
         if(isTG && Telegram.WebApp.showAlert) Telegram.WebApp.showAlert(msg);
         else alert(msg);
         return;
@@ -314,25 +326,19 @@
       setTimeout(()=>{ spinning = false; }, 5200);
     });
 
-    // ===== 結果處理與回傳 =====
+    /* ========== 結果處理 & 回傳給 @pcd_luckywheel_bot ========== */
     function onFinished(segment){
       const result = segment?.text || '';
       $btn.textContent = '🎯 开始 / Start';
       $btn.disabled = totalChances() <= 0;
 
-      const isOneMore = /One more spin chance/i.test(result);
-      const isSubscribe = /Subscribe and share channel/i.test(result);
-
-      if(isOneMore){
-        addBonus(1); updateChances();
+      if (/One more spin chance/i.test(result)){
+        addBonus(1);
+        updateChances();
         notify('获得 +1 次机会 · +1 extra chance');
-      }else if(isSubscribe){
-        addBonus(1); updateChances();
-        if(isTG) Telegram.WebApp.openTelegramLink("https://t.me/pcatdolls");
-        notify('订阅成功 +1 次机会 · +1 extra chance added');
-      }else if(/Sorry/i.test(result)){
+      } else if(/Sorry/i.test(result)){
         notify('谢谢参与 · Thanks for playing');
-      }else{
+      } else{
         notify('恭喜中奖：' + result + '\nCongratulations!');
       }
 
@@ -340,8 +346,9 @@
       const name = u ? ((u.first_name || '') + (u.last_name ? (' ' + u.last_name) : '')) : 'Guest';
       const handle = u && u.username ? ('@' + u.username) : '';
       const payload = `Winner: ${name}${handle ? ' ' + handle : ''} | Result: ${result}`;
-      if(isTG && Telegram.WebApp.sendData){ try { Telegram.WebApp.sendData(payload); } catch(e){} }
-
+      if(isTG && Telegram.WebApp.sendData){
+        try { Telegram.WebApp.sendData(payload); } catch(e){}
+      }
       try{ if(isTG && Telegram.WebApp.HapticFeedback){ Telegram.WebApp.HapticFeedback.notificationOccurred('success'); } }catch(e){}
     }
 
