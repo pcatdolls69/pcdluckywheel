@@ -59,12 +59,9 @@
 <div id="wheel-container">
   <canvas id="wheel" width="420" height="420"></canvas>
 
-  <!-- 顶部固定三角指针（尖角朝上） -->
-<svg id="centerPointer" viewBox="0 0 420 50" aria-hidden="true"
-     style="position:absolute;left:0;top:0;width:100%;height:50px;pointer-events:none;z-index:2">
-  <!-- 尖端在 (210, 8)；底边在 (200,40)-(220,40)。想更细把 200/220 靠近一点 -->
-  <polygon points="210,8 200,40 220,40" fill="#000"></polygon>
-</svg>
+  <svg id="centerPointer" viewBox="0 0 420 420" aria-hidden="true">
+    <polygon points="209,225 211,225 210,170"></polygon>
+  </svg>
 </div>
 
 <button id="spinBtn">开始抽奖 / Start</button>
@@ -86,14 +83,14 @@ const isTG = !!(window.Telegram && Telegram.WebApp);
 if (isTG) Telegram.WebApp.ready();
 
 const prizes = [
-  "45⏰or 60⏰/10 OFF",
-  "45⏰or 60⏰/20 OFF",
+  "45⏰or60⏰/10 OFF",
+  "45⏰or60⏰/20 OFF",
   "One more spin",
-  "45⏰or 60⏰/10 OFF",
+  "45⏰or60⏰/10 OFF",
   "Sorry 😢",
-  "45⏰or 60⏰/20 OFF",
+  "45⏰or60⏰/20 OFF",
   "Sorry 😢",
-  "45⏰or 60⏰/40 OFF",
+  "45⏰or60⏰/40 OFF",
   "Sorry 😢"
 ];
 const colors = ["#ffd1e8","#cbb2fe","#b6e1ff","#ffe07a","#ffd1e8","#cbb2fe","#b6e1ff","#ffe07a","#ffd1e8"];
@@ -171,15 +168,15 @@ function drawWheel(angleOffset = 0) {
     const text = prizes[i];
 
     // 这个是文字“最大允许宽度”，略小于扇区弧长
-    const maxWidth = Math.min(110, r * arc * 0.65); // 安全系数 0.7
+    const maxWidth = Math.min(120, r * arc * 0.7); // 安全系数 0.7
     // 放置半径靠外圈一些，避免靠中心挤在一起
-    const textRadius = r - 90;
+    const textRadius = r - 48;
 
     // 从 18px 开始，逐步缩到 12px 直到能装下
     let fontSize = 18;
     ctx.font = `bold ${fontSize}px Arial, 'Noto Sans SC', sans-serif`;
     while (ctx.measureText(text).width > maxWidth && fontSize > 12) {
-      fontSize -= ;
+      fontSize -= 1;
       ctx.font = `bold ${fontSize}px Arial, 'Noto Sans SC', sans-serif`;
     }
 
@@ -213,26 +210,12 @@ spinBtn.addEventListener('click', () => {
 });
 
 function onDone(spinAngleDeg){
-  const n   = prizes.length;
-  const arc = 2 * Math.PI / n;
-
-  // 指针朝上（12点方向）：-90° = -π/2
-  const pointerAngle = -Math.PI / 2;
-
-  // 轮盘最终旋转角度（弧度）
-  const angleOffset = (spinAngleDeg % 360) * Math.PI / 180;
-
-  // 指针相对于盘面的位置角，归一到 [0, 2π)
-  const eff = (pointerAngle - angleOffset) % (2*Math.PI);
-  const effPos = (eff + 2*Math.PI) % (2*Math.PI);
-
-  // 中奖扇区索引（0..n-1）
-  const idx = Math.floor(effPos / arc);
+  const n = prizes.length;
+  const raw = (spinAngleDeg % 360) / 360;
+  const idx = (n - 1 - Math.floor(raw * n)) % n;
   const result = prizes[idx];
 
-  // ……下面保留你原来的弹窗/加次数/上报……
-  const msg = /Sorry/.test(result) ? "谢谢参与 / Thanks for playing"
-                                   : "恭喜中奖 / Congratulations!\n" + result;
+  const msg = /Sorry/.test(result) ? "谢谢参与 / Thanks for playing" : "恭喜中奖 / Congratulations!\n" + result;
   if (isTG && Telegram.WebApp.showPopup) {
     Telegram.WebApp.showPopup({title:"幸运转盘 / Lucky Wheel", message:msg, buttons:[{type:'ok', id:'ok'}]});
   } else if (isTG && Telegram.WebApp.showAlert) {
@@ -240,6 +223,7 @@ function onDone(spinAngleDeg){
   } else {
     alert(msg);
   }
+
   if (/One more spin chance/i.test(result)) { bonusSpins++; saveState(); updateUI(); }
   reportResult(result);
 }
