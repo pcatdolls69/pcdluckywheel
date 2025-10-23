@@ -66,7 +66,7 @@
   <canvas id="wheel" width="420" height="420"></canvas>
   <!-- 中心深紫三角指针（从中心指向 12 点，尖端略超出圆盘） -->
   <svg id="centerPointer" viewBox="0 0 420 420" aria-hidden="true">
-    <polygon points="205,210 215,210 210,40" fill="#f6b6d5" ></polygon>
+    <polygon points="208,220 212,220 210,180" fill="#2e0854" ></polygon>
   </svg>
 </div>
 
@@ -178,7 +178,7 @@ function drawWheel(angleOffset = 0) {
     ctx.rotate(start + arc/2);
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "#f6b6d5";
+    ctx.fillStyle = "#000";
     ctx.font = "bold 16px Arial, 'Noto Sans SC', sans-serif";
     ctx.fillText(prizes[i], r-20, 0);
     ctx.restore();
