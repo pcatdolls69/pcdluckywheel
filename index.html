@@ -141,27 +141,46 @@ const ctx = canvas.getContext('2d');
 function drawWheel(angleOffset = 0) {
   const cx = 210, cy = 210, r = 200;
   const n = prizes.length;
-  const arc = 2*Math.PI / n;
-  ctx.clearRect(0,0,420,420);
-  for (let i=0;i<n;i++){
-    const start = i*arc + angleOffset;
-    const end = start + arc;
+  const arc = 2 * Math.PI / n;
 
+  ctx.clearRect(0, 0, 420, 420);
+
+  for (let i = 0; i < n; i++) {
+    const start = i * arc + angleOffset;
+    const end   = start + arc;
+
+    // 扇形
     ctx.beginPath();
-    ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,r,start,end);
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
     ctx.closePath();
     ctx.fillStyle = colors[i];
     ctx.fill();
 
+    // === 文案（自动缩小以适配每个扇区） ===
     ctx.save();
-    ctx.translate(cx,cy);
-    ctx.rotate(start + arc/2);
+    ctx.translate(cx, cy);
+    ctx.rotate(start + arc / 2);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#000";
-    ctx.font = "bold 18px Arial, 'Noto Sans SC', sans-serif";
-    ctx.fillText(prizes[i], r-40, 0);
+
+    const text = prizes[i];
+
+    // 这个是文字“最大允许宽度”，略小于扇区弧长
+    const maxWidth = Math.min(120, r * arc * 0.7); // 安全系数 0.7
+    // 放置半径靠外圈一些，避免靠中心挤在一起
+    const textRadius = r - 48;
+
+    // 从 18px 开始，逐步缩到 12px 直到能装下
+    let fontSize = 18;
+    ctx.font = `bold ${fontSize}px Arial, 'Noto Sans SC', sans-serif`;
+    while (ctx.measureText(text).width > maxWidth && fontSize > 12) {
+      fontSize -= 1;
+      ctx.font = `bold ${fontSize}px Arial, 'Noto Sans SC', sans-serif`;
+    }
+
+    ctx.fillText(text, textRadius, 0);
     ctx.restore();
   }
 }
