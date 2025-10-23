@@ -83,14 +83,14 @@ const isTG = !!(window.Telegram && Telegram.WebApp);
 if (isTG) Telegram.WebApp.ready();
 
 const prizes = [
-  "45⏰ or 60⏰ / 10 OFF",
-  "45⏰ or 60⏰ / 20 OFF",
-  "One more spin chance",
-  "45⏰ or 60⏰ / 10 OFF",
+  "45⏰or60⏰/10 OFF",
+  "45⏰or60⏰/20 OFF",
+  "One more spin",
+  "45⏰or60⏰/10 OFF",
   "Sorry 😢",
-  "45⏰ or 60⏰ / 20 OFF",
+  "45⏰or60⏰/20 OFF",
   "Sorry 😢",
-  "45⏰ or 60⏰ / 40 OFF",
+  "45⏰or60⏰/40 OFF",
   "Sorry 😢"
 ];
 const colors = ["#ffd1e8","#cbb2fe","#b6e1ff","#ffe07a","#ffd1e8","#cbb2fe","#b6e1ff","#ffe07a","#ffd1e8"];
@@ -160,7 +160,7 @@ function drawWheel(angleOffset = 0) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#000";
-    ctx.font = "bold 20px Arial, 'Noto Sans SC', sans-serif";
+    ctx.font = "bold 18px Arial, 'Noto Sans SC', sans-serif";
     ctx.fillText(prizes[i], r-40, 0);
     ctx.restore();
   }
