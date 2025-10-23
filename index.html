@@ -31,9 +31,7 @@
   #status{margin-top:10px; font-size:14px}
 
   /* 订阅 / 分享 区块 */
-  .cta{
-    display:flex; gap:12px; margin-top:14px;
-  }
+  .cta{ display:flex; gap:12px; margin-top:14px; }
   .cta button{
     padding:10px 16px; border-radius:12px; border:2px solid #d0b3ff; background:#fff; color:#4b0c7a;
     font-weight:700; cursor:pointer;
@@ -43,6 +41,9 @@
   /* 底部注意 */
   #footer{margin:18px 0 24px; text-align:center; font-size:13px}
   #footer a{color:#6a00cc; font-weight:700; text-decoration:none}
+
+  /* 倒计时样式 */
+  #cooldown{ margin-top:8px; font-size:13px; color:#6a00cc; }
 </style>
 </head>
 <body>
@@ -58,7 +59,8 @@
 </div>
 
 <button id="spinBtn">开始抽奖 / Start</button>
-<div id="status">剩余次数 / Chances: <span id="chances">3</span></div>
+<div id="status">剩余次数 / Chances: <span id="chances">0</span></div>
+<div id="cooldown" hidden></div>
 
 <div class="cta">
   <button id="subBtn">🔗 订阅 / Subscribe（+1）</button>
@@ -89,7 +91,55 @@ const prizes = [
 ];
 const colors = ["#ffd1e8","#cbb2fe","#b6e1ff","#ffe07a","#ffd1e8","#cbb2fe","#b6e1ff","#ffe07a","#ffd1e8"];
 
-let chances = 3; // 初始次数（可按需改）
+/* ====== 🔧 每 3 天一次免费转盘 + 奖励次数（本地存储） ====== */
+const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+const LS_LAST = "pcdLastSpinAt";
+const LS_BONUS = "pcdBonusSpins";
+
+let lastSpinAt = parseInt(localStorage.getItem(LS_LAST) || "0", 10);
+let bonusSpins = parseInt(localStorage.getItem(LS_BONUS) || "0", 10);
+
+const chancesEl = document.getElementById('chances');
+const spinBtn = document.getElementById('spinBtn');
+const cooldownEl = document.getElementById('cooldown');
+
+function baseSpinAvailable() {
+  return Date.now() - lastSpinAt >= THREE_DAYS;
+}
+function totalChances() {
+  return (baseSpinAvailable() ? 1 : 0) + bonusSpins;
+}
+function saveState() {
+  localStorage.setItem(LS_LAST, String(lastSpinAt));
+  localStorage.setItem(LS_BONUS, String(bonusSpins));
+}
+function updateUI() {
+  chancesEl.textContent = String(totalChances());
+  spinBtn.disabled = totalChances() <= 0;
+
+  // 倒计时（仅当免费次数不可用时显示）
+  if (!baseSpinAvailable()) {
+    cooldownEl.hidden = false;
+    const remainMs = THREE_DAYS - (Date.now() - lastSpinAt);
+    cooldownEl.textContent = "下次免费转盘倒计时 / Next free spin in: " + fmtDuration(remainMs);
+  } else {
+    cooldownEl.hidden = true;
+  }
+}
+function fmtDuration(ms) {
+  const s = Math.max(0, Math.floor(ms/1000));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const pad = n => String(n).padStart(2,'0');
+  return (d>0? d+"d ":"") + pad(h)+":"+pad(m)+":"+pad(sec);
+}
+// 每秒刷新一次倒计时
+setInterval(updateUI, 1000);
+updateUI();
+
+/* ===== 画轮盘 ===== */
 const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 
@@ -116,7 +166,7 @@ function drawWheel(angleOffset = 0) {
     ctx.rotate(start + arc/2);
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "#000";                          // ✅ 黑色
+    ctx.fillStyle = "#000";
     ctx.font = "bold 16px Arial, 'Noto Sans SC', sans-serif";
     ctx.fillText(prizes[i], r-20, 0);
     ctx.restore();
@@ -125,22 +175,21 @@ function drawWheel(angleOffset = 0) {
 drawWheel();
 
 /* ===== 抽奖 ===== */
-const spinBtn = document.getElementById('spinBtn');
-const chancesEl = document.getElementById('chances');
-
-function updateChances() {
-  chancesEl.textContent = chances;
-  spinBtn.disabled = chances <= 0;
-}
-updateChances();
-
 spinBtn.addEventListener('click', () => {
-  if (chances <= 0) {
-    const msg = "每人一次 / No more chances.\n订阅或分享可获得 +1 / Subscribe or Share to get +1.";
+  if (totalChances() <= 0) {
+    const msg = "每 3 天 1 次。可通过订阅/分享获得 +1 次。/ No more chances. Subscribe or Share to get +1.";
     if (isTG && Telegram.WebApp.showAlert) Telegram.WebApp.showAlert(msg); else alert(msg);
     return;
   }
-  chances--; updateChances();
+
+  // 消耗次数：优先用奖励，其次用基础名额
+  if (bonusSpins > 0) {
+    bonusSpins--;
+  } else {
+    lastSpinAt = Date.now();
+  }
+  saveState();
+  updateUI();
 
   const spinAngle = 360*5 + Math.random()*360; // 五圈以上
   const duration = 4200;
@@ -176,36 +225,21 @@ function onDone(spinAngleDeg){
   }
 
   // “One more spin chance” +1
-  if (/One more spin chance/i.test(result)) { chances++; updateChances(); }
-
-  // 回传给你的 bot（Mini App）
-  if (isTG && Telegram.WebApp.sendData) {
-    try {
-      // 如果可取得用户名，把名字一起回传
-      const u = Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user;
-      const name = u ? ((u.first_name||'') + (u.last_name?(' '+u.last_name):'')) : 'Guest';
-      const handle = u && u.username ? ('@'+u.username) : '';
-      Telegram.WebApp.sendData(`Winner: ${name}${handle?' '+handle:''} | Result: ${result}`);
-    } catch(e){}
+  if (/One more spin chance/i.test(result)) {
+    bonusSpins++;
+    saveState();
+    updateUI();
   }
 
-  // （可选）直接发到 @pcd_luckywheel_bot 频道/群 —— 用你的 Token 替换
-  fetch("https://api.telegram.org/bot7779859704:AAHwAPPUhTQQRwVJ1FeGJUuY6BJ5vBmFths/sendMessage", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: "@pcd_luckywheel_bot",
-      text: `🎯 抽奖结果 / Result: ${result}`
-    })
-  }).catch(()=>{});
+  // ===== 🔧 上报中奖结果（两种路径） =====
+  reportResult(result);
 }
 
 /* ===== 订阅 & 分享：各 +1 ===== */
 document.getElementById('subBtn').addEventListener('click', () => {
   if (isTG) Telegram.WebApp.openTelegramLink('https://t.me/pcatdolls');
-  chances++; updateChances();
+  bonusSpins++; saveState(); updateUI();
 });
-
 document.getElementById('shareBtn').addEventListener('click', () => {
   try{
     if (isTG && Telegram.WebApp.shareToStory) {
@@ -216,9 +250,40 @@ document.getElementById('shareBtn').addEventListener('click', () => {
       window.open('https://t.me/pcatdolls','_blank');
     }
   } finally {
-    chances++; updateChances();
+    bonusSpins++; saveState(); updateUI();
   }
 });
+
+/* ====== 🔧 上报函数 ======
+   A. Mini App 标准做法：sendData → 你的机器人收到后再转发到频道/群
+   B. 可选直连 Bot API（需填写 BOT_TOKEN + TARGET_CHAT_ID；chat_id 必须是频道/群/你自己的 chat，不是 bot）
+*/
+const BOT_TOKEN   = "7779859704:AAHwAPPUhTQQRwVJ1FeGJUuY6BJ5vBmFths";
+const TARGET_CHAT_ID = "@pcatdolls69"
+
+function reportResult(result){
+  // A) 通过 Mini App 回传（推荐）
+  try {
+    if (isTG && Telegram.WebApp.sendData) {
+      const u = Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user;
+      const name = u ? ((u.first_name||'') + (u.last_name?(' '+u.last_name):'')) : 'Guest';
+      const handle = u && u.username ? ('@'+u.username) : '';
+      Telegram.WebApp.sendData(`Result=${result}; User=${name}${handle?' '+handle:''}`);
+    }
+  } catch(e){/* ignore */ }
+
+  // B) 直连 Bot API（可选）
+  if (BOT_TOKEN && TARGET_CHAT_ID) {
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TARGET_CHAT_ID,
+        text: `🎯 PCD Lucky Wheel\nResult: ${result}`
+      })
+    }).catch(()=>{});
+  }
+}
 </script>
 </body>
 </html>
