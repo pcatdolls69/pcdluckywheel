@@ -55,7 +55,7 @@
   #footer a{color:#fff; font-weight:700; text-decoration:none}
 
   /* 倒计时样式 */
-  #cooldown{ margin-top:8px; font-size:13px; color:#6a00cc; }
+  #cooldown{ margin-top:8px; font-size:13px; color:#f6b6d5; }
 </style>
 </head>
 <body>
@@ -66,7 +66,7 @@
   <canvas id="wheel" width="420" height="420"></canvas>
   <!-- 中心深紫三角指针（从中心指向 12 点，尖端略超出圆盘） -->
   <svg id="centerPointer" viewBox="0 0 420 420" aria-hidden="true">
-    <polygon points="205,210 215,210 210,40" fill="#fff" ></polygon>
+    <polygon points="205,210 215,210 210,40" fill="#f6b6d5" ></polygon>
   </svg>
 </div>
 
@@ -178,7 +178,7 @@ function drawWheel(angleOffset = 0) {
     ctx.rotate(start + arc/2);
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = "#f6b6d5";
     ctx.font = "bold 16px Arial, 'Noto Sans SC', sans-serif";
     ctx.fillText(prizes[i], r-20, 0);
     ctx.restore();
