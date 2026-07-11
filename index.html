@@ -1,57 +1,153 @@
 <!DOCTYPE html>
 <html lang="zh-Hans">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>幸运转盘 / Lucky Wheel</title>
+
 <style>
-  :root{
-    --soft-pink:#ffe6f9;
-    --soft-purple:#f3c8f0;
-    --pink-text:#5a0060;
+  :root {
+    --soft-pink: #ffe6f9;
+    --soft-purple: #f3c8f0;
+    --pink-text: #5a0060;
   }
-  body{
-    margin:0; color:#333;
-    font-family:'Noto Sans SC', Arial, sans-serif;
-    background:#222;
-    display:flex; flex-direction:column; align-items:center; min-height:100vh;
-  }
-  h2{margin:18px 0 8px; color:#fff}
-  #wheel-container{
-    position:relative;
-    width:420px; height:420px;
-    overflow:visible;
-    margin-top:6px;
-  }
-  canvas{
-    width:100%; height:100%; border-radius:50%;
-    box-shadow: 0 0 30px rgba(255,255,255,.85), 0 0 60px rgba(255,200,255,.6);
-    background:#fff;
-  }
-  #centerPointer{position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:2;}
-  #centerPointer polygon{fill:#000}
 
-  #spinBtn, .cta button{
-    background:var(--soft-pink);
-    border:2px solid var(--soft-purple);
-    border-radius:16px;
-    color:var(--pink-text);
-    font-weight:700;
-    box-shadow:0 3px 6px rgba(0,0,0,0.15);
-    cursor:pointer;
+  body {
+    margin: 0;
+    color: #333;
+    font-family: 'Noto Sans SC', Arial, sans-serif;
+    background: #222;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
   }
-  #spinBtn{ margin-top:8px; padding:12px 28px; font-size:18px; position:relative; top:-18px; }
-  #spinBtn:active{transform:scale(.98)}
-  #status{margin-top:0; font-size:14px; color:#fff; position:relative; top:-14px;}
 
-  .cta{ display:flex; gap:10px; margin-top:8px; justify-content:center; position:relative; top:-14px; }
-  .cta button{ padding:10px 16px; }
+  h2 {
+    margin: 18px 0 8px;
+    color: #fff;
+  }
 
-  #cooldown{ margin-top:4px; font-size:13px; color:#cfc7ff; position:relative; top:-10px; }
-  #footer{margin:6px 0 18px; text-align:center; font-size:13px; color:#fff}
-  #footer a{color:#fff; font-weight:700; text-decoration:none}
+  #wheel-container {
+    position: relative;
+    width: 420px;
+    height: 420px;
+    overflow: visible;
+    margin-top: 6px;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow:
+      0 0 30px rgba(255,255,255,.85),
+      0 0 60px rgba(255,200,255,.6);
+  }
+
+  #centerPointer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  #centerPointer polygon {
+    fill: #000;
+  }
+
+  #spinBtn,
+  .cta button {
+    background: var(--soft-pink);
+    border: 2px solid var(--soft-purple);
+    border-radius: 16px;
+    color: var(--pink-text);
+    font-weight: 700;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    cursor: pointer;
+  }
+
+  #spinBtn {
+    margin-top: 8px;
+    padding: 12px 28px;
+    font-size: 18px;
+    position: relative;
+    top: -18px;
+  }
+
+  #spinBtn:active {
+    transform: scale(.98);
+  }
+
+  #spinBtn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  #status {
+    margin-top: 0;
+    font-size: 14px;
+    color: #fff;
+    position: relative;
+    top: -14px;
+  }
+
+  #cooldown {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #cfc7ff;
+    position: relative;
+    top: -10px;
+    text-align: center;
+  }
+
+  .cta {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    justify-content: center;
+    position: relative;
+    top: -14px;
+  }
+
+  .cta button {
+    padding: 10px 16px;
+  }
+
+  #footer {
+    margin: 6px 10px 18px;
+    text-align: center;
+    font-size: 13px;
+    color: #fff;
+    line-height: 1.7;
+  }
+
+  #footer a {
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  @media (max-width: 460px) {
+    #wheel-container {
+      width: 94vw;
+      height: 94vw;
+      max-width: 420px;
+      max-height: 420px;
+    }
+
+    .cta {
+      flex-wrap: wrap;
+    }
+  }
 </style>
 </head>
+
 <body>
 
 <h2>幸运转盘 / Lucky Wheel</h2>
@@ -65,7 +161,12 @@
 </div>
 
 <button id="spinBtn">开始抽奖 / Start</button>
-<div id="status">剩余次数 / Chances: <span id="chances">0</span></div>
+
+<div id="status">
+  剩余次数 / Chances:
+  <span id="chances">0</span>
+</div>
+
 <div id="cooldown" hidden></div>
 
 <div class="cta">
@@ -74,201 +175,514 @@
 </div>
 
 <div id="footer">
-  ⚠️ 所有奖项不能重叠使用 / All prizes cannot be combined<br>
+  ⚠️ 所有奖项不能重叠使用 / All prizes cannot be combined
+  <br><br>
+
+  ‼️ 不適用於有 VIP 圖示的女生 /
+  Not valid for girls with the VIP badge
   <br>
-‼️ 不適用於有 VIP 圖示的女生 / Not valid for girls with the vip badge <br>
-  <a href="https://t.me/pcatdolls" target="_blank">pcatdolls 频道 / Channel</a>
+
+  ‼️ 優惠必須於一週內使用完成 /
+  Prize must be redeemed within 7 days
+  <br>
+
+  <a href="https://t.me/pcatdolls" target="_blank">
+    pcatdolls 频道 / Channel
+  </a>
 </div>
 
 <script>
-const isTG = !!(window.Telegram && Telegram.WebApp);
-if (isTG) Telegram.WebApp.ready();
+const isTG = Boolean(
+  window.Telegram &&
+  window.Telegram.WebApp
+);
+
+if (isTG) {
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+}
 
 const prizes = [
-  "45⏰or60⏰/10 OFF",
+  "⏰45-60/10 OFF",
   "Sorry 😢",
-  "45⏰or60⏰/20 OFF",
+  "⏰45-60/20 OFF",
   "Sorry 😢",
-  "45⏰or60⏰/40 OFF",
+  "⏰45-60/40 OFF",
   "Sorry 😢",
-  "45⏰or60⏰/10 OFF",
-  "Sorry 😢",
-  "45⏰or60⏰/20 OFF"
+  "⏰45-60/10 OFF",
+  "Sorry 😢"
 ];
-const colors = ["#ffd1e8","#cbb2fe","#b6e1ff","#ffe07a","#ffd1e8","#cbb2fe","#b6e1ff","#ffe07a","#ffd1e8"];
 
-const THREE_DAYS = 14 * 24 * 60 * 60 * 1000;
+const colors = [
+  "#ffd1e8",
+  "#cbb2fe",
+  "#eb298e",
+  "#cbb2fe",
+  "#ffe07a",
+  "#cbb2fe",
+  "#ffd1e8",
+  "#cbb2fe",
+];
+
+/* 14天一次免费抽奖 */
+const FOURTEEN_DAYS =
+  30 * 24 * 60 * 60 * 1000;
+
 const LS_LAST = "pcdLastSpinAt";
 const LS_BONUS = "pcdBonusSpins";
 
-let lastSpinAt = parseInt(localStorage.getItem(LS_LAST) || "0", 10);
-let bonusSpins = parseInt(localStorage.getItem(LS_BONUS) || "0", 10);
+let lastSpinAt = parseInt(
+  localStorage.getItem(LS_LAST) || "0",
+  10
+);
 
-const chancesEl = document.getElementById('chances');
-const spinBtn = document.getElementById('spinBtn');
-const cooldownEl = document.getElementById('cooldown');
+let bonusSpins = parseInt(
+  localStorage.getItem(LS_BONUS) || "0",
+  10
+);
 
-function baseSpinAvailable() { return Date.now() - lastSpinAt >= THREE_DAYS; }
-function totalChances() { return (baseSpinAvailable() ? 1 : 0) + bonusSpins; }
+let spinning = false;
+
+const chancesEl =
+  document.getElementById("chances");
+
+const spinBtn =
+  document.getElementById("spinBtn");
+
+const cooldownEl =
+  document.getElementById("cooldown");
+
+const canvas =
+  document.getElementById("wheel");
+
+const ctx =
+  canvas.getContext("2d");
+
+function baseSpinAvailable() {
+  return (
+    Date.now() - lastSpinAt >=
+    FOURTEEN_DAYS
+  );
+}
+
+function totalChances() {
+  return (
+    (baseSpinAvailable() ? 1 : 0) +
+    bonusSpins
+  );
+}
+
 function saveState() {
-  localStorage.setItem(LS_LAST, String(lastSpinAt));
-  localStorage.setItem(LS_BONUS, String(bonusSpins));
+  localStorage.setItem(
+    LS_LAST,
+    String(lastSpinAt)
+  );
+
+  localStorage.setItem(
+    LS_BONUS,
+    String(bonusSpins)
+  );
 }
+
 function fmtDuration(ms) {
-  const s = Math.max(0, Math.floor(ms/1000));
-  const d = Math.floor(s / 86400);
-  const h = Math.floor((s % 86400) / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  const pad = n => String(n).padStart(2,'0');
-  return (d>0? d+"d ":"") + pad(h)+":"+pad(m)+":"+pad(sec);
+  const seconds = Math.max(
+    0,
+    Math.floor(ms / 1000)
+  );
+
+  const days =
+    Math.floor(seconds / 86400);
+
+  const hours =
+    Math.floor(
+      (seconds % 86400) / 3600
+    );
+
+  const minutes =
+    Math.floor(
+      (seconds % 3600) / 60
+    );
+
+  const secs =
+    seconds % 60;
+
+  const pad = number =>
+    String(number).padStart(2, "0");
+
+  return (
+    (days > 0 ? days + "d " : "") +
+    pad(hours) +
+    ":" +
+    pad(minutes) +
+    ":" +
+    pad(secs)
+  );
 }
+
 function updateUI() {
-  chancesEl.textContent = String(totalChances());
-  spinBtn.disabled = totalChances() <= 0;
+  chancesEl.textContent =
+    String(totalChances());
+
+  spinBtn.disabled =
+    spinning ||
+    totalChances() <= 0;
+
   if (!baseSpinAvailable()) {
+    const remainMs =
+      FOURTEEN_DAYS -
+      (Date.now() - lastSpinAt);
+
     cooldownEl.hidden = false;
-    const remainMs = THREE_DAYS - (Date.now() - lastSpinAt);
-    cooldownEl.textContent = "下次免费转盘倒计时 / Next free spin in: " + fmtDuration(remainMs);
+
+    cooldownEl.textContent =
+      "下次免费转盘倒计时 / Next free spin in: " +
+      fmtDuration(remainMs);
   } else {
     cooldownEl.hidden = true;
   }
 }
+
 setInterval(updateUI, 1000);
 updateUI();
 
-const canvas = document.getElementById('wheel');
-const ctx = canvas.getContext('2d');
-
 function drawWheel(angleOffset = 0) {
-  const cx = 210, cy = 210, r = 200;
-  const n = prizes.length;
-  const arc = 2 * Math.PI / n;
+  const cx = 210;
+  const cy = 210;
+  const radius = 200;
 
-  ctx.clearRect(0, 0, 420, 420);
+  const numberOfPrizes =
+    prizes.length;
 
-  for (let i = 0; i < n; i++) {
-    const start = i * arc + angleOffset;
-    const end   = start + arc;
+  const arc =
+    (2 * Math.PI) /
+    numberOfPrizes;
 
-    // 扇形
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  for (
+    let i = 0;
+    i < numberOfPrizes;
+    i++
+  ) {
+    const start =
+      i * arc + angleOffset;
+
+    const end =
+      start + arc;
+
     ctx.beginPath();
     ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r, start, end);
+    ctx.arc(
+      cx,
+      cy,
+      radius,
+      start,
+      end
+    );
     ctx.closePath();
+
     ctx.fillStyle = colors[i];
     ctx.fill();
 
-    // === 文案（自动缩小以适配每个扇区） ===
     ctx.save();
+
     ctx.translate(cx, cy);
-    ctx.rotate(start + arc / 2);
+    ctx.rotate(
+      start + arc / 2
+    );
+
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#000";
 
     const text = prizes[i];
 
-    // 这个是文字“最大允许宽度”，略小于扇区弧长
-    const maxWidth = Math.min(120, r * arc * 0.7); // 安全系数 0.7
-    // 放置半径靠外圈一些，避免靠中心挤在一起
-    const textRadius = r - 48;
+    const maxWidth =
+      Math.min(
+        120,
+        radius * arc * 0.7
+      );
 
-    // 从 18px 开始，逐步缩到 12px 直到能装下
+    const textRadius =
+      radius - 48;
+
     let fontSize = 18;
-    ctx.font = `bold ${fontSize}px Arial, 'Noto Sans SC', sans-serif`;
-    while (ctx.measureText(text).width > maxWidth && fontSize > 12) {
-      fontSize -= 1;
-      ctx.font = `bold ${fontSize}px Arial, 'Noto Sans SC', sans-serif`;
+
+    ctx.font =
+      `bold ${fontSize}px Arial, 'Noto Sans SC', sans-serif`;
+
+    while (
+      ctx.measureText(text).width >
+        maxWidth &&
+      fontSize > 12
+    ) {
+      fontSize--;
+
+      ctx.font =
+        `bold ${fontSize}px Arial, 'Noto Sans SC', sans-serif`;
     }
 
-    ctx.fillText(text, textRadius, 0);
+    ctx.fillText(
+      text,
+      textRadius,
+      0
+    );
+
     ctx.restore();
   }
 }
+
 drawWheel();
 
-spinBtn.addEventListener('click', () => {
-  if (totalChances() <= 0) {
-    const msg = "每 3 天 1 次。可通过订阅/分享获得 +1 次。/ No more chances. Subscribe or Share to get +1.";
-    if (isTG && Telegram.WebApp.showAlert) Telegram.WebApp.showAlert(msg); else alert(msg);
-    return;
+spinBtn.addEventListener(
+  "click",
+  () => {
+    if (spinning) {
+      return;
+    }
+
+    if (totalChances() <= 0) {
+      const message =
+        "每14天可免费抽奖一次。订阅或分享可获得额外机会。\n" +
+        "One free spin every 14 days. Subscribe or Share to get an extra chance.";
+
+      if (
+        isTG &&
+        Telegram.WebApp.showAlert
+      ) {
+        Telegram.WebApp.showAlert(
+          message
+        );
+      } else {
+        alert(message);
+      }
+
+      return;
+    }
+
+    spinning = true;
+
+    if (bonusSpins > 0) {
+      bonusSpins--;
+    } else {
+      lastSpinAt = Date.now();
+    }
+
+    saveState();
+    updateUI();
+
+    const spinAngle =
+      360 * 5 +
+      Math.random() * 360;
+
+    const duration = 4200;
+
+    const startTime =
+      performance.now();
+
+    function step(now) {
+      const progress =
+        Math.min(
+          (now - startTime) /
+            duration,
+          1
+        );
+
+      const ease =
+        1 -
+        Math.pow(
+          1 - progress,
+          3
+        );
+
+      drawWheel(
+        ease *
+        spinAngle *
+        Math.PI /
+        180
+      );
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        spinning = false;
+        updateUI();
+        onDone(spinAngle);
+      }
+    }
+
+    requestAnimationFrame(step);
   }
-  if (bonusSpins > 0) bonusSpins--; else lastSpinAt = Date.now();
-  saveState(); updateUI();
+);
 
-  const spinAngle = 360*5 + Math.random()*360;
-  const duration = 4200;
-  const start = performance.now();
+function onDone(spinAngleDeg) {
+  const numberOfPrizes =
+    prizes.length;
 
-  function step(now){
-    const p = Math.min((now-start)/duration, 1);
-    const ease = 1 - Math.pow(1-p,3);
-    drawWheel(ease * spinAngle * Math.PI/180);
-    if (p < 1) requestAnimationFrame(step);
-    else onDone(spinAngle);
-  }
-  requestAnimationFrame(step);
-});
+  const raw =
+    (spinAngleDeg % 360) /
+    360;
 
-function onDone(spinAngleDeg){
-  const n = prizes.length;
-  const raw = (spinAngleDeg % 360) / 360;
-  const idx = (n - 1 - Math.floor(raw * n)) % n;
-  const result = prizes[idx];
+  const index =
+    (
+      numberOfPrizes -
+      1 -
+      Math.floor(
+        raw * numberOfPrizes
+      )
+    ) %
+    numberOfPrizes;
 
-  const msg = /Sorry/.test(result) ? "谢谢参与 / Thanks for playing" : "恭喜中奖 / Congratulations!\n" + result;
-  if (isTG && Telegram.WebApp.showPopup) {
-    Telegram.WebApp.showPopup({title:"幸运转盘 / Lucky Wheel", message:msg, buttons:[{type:'ok', id:'ok'}]});
-  } else if (isTG && Telegram.WebApp.showAlert) {
-    Telegram.WebApp.showAlert(msg);
-  } else {
-    alert(msg);
-  }
+  const result =
+    prizes[index];
 
-  if (/One more spin chance/i.test(result)) { bonusSpins++; saveState(); updateUI(); }
+  /* 不显示弹窗，只把结果传回Bot */
   reportResult(result);
 }
 
-document.getElementById('subBtn').addEventListener('click', () => {
-  if (isTG) Telegram.WebApp.openTelegramLink('https://t.me/pcatdolls');
-  bonusSpins++; saveState(); updateUI();
-});
-document.getElementById('shareBtn').addEventListener('click', () => {
-  try{
-    if (isTG && Telegram.WebApp.shareToStory) {
-      Telegram.WebApp.shareToStory({text:'PCD Lucky Wheel', widget_link:'https://t.me/pcatdolls'});
-    } else if (isTG) {
-      Telegram.WebApp.openTelegramLink('https://t.me/pcatdolls');
-    } else {
-      window.open('https://t.me/pcatdolls','_blank');
-    }
-  } finally {
-    bonusSpins++; saveState(); updateUI();
+function reportResult(result) {
+  const isWinner =
+    !/Sorry/i.test(result);
+
+  let botMessage;
+
+  if (isWinner) {
+    botMessage =
+      "🎉 恭喜中奖 / Congratulations!\n" +
+      result +
+      "\n\n" +
+      "‼️ 不適用於有 VIP 圖示的女生 /\n" +
+      "‼️ Not valid for girls with the VIP badge\n\n" +
+      "‼️ 優惠必須於一週內使用完成 /\n" +
+      "‼️ Prize must be redeemed within 7 days";
+  } else {
+    botMessage =
+      "谢谢参与 / Thanks for playing";
   }
-});
 
-const BOT_TOKEN   = "7779859704:AAHwAPPUhTQQRwVJ1FeGJUuY6BJ5vBmFths";           // 可选直连：填入你的 token
-const TARGET_CHAT_ID = "";        // 可选直连：@频道名 或 -100xxxxxxxxxx
+  if (
+    !isTG ||
+    !Telegram.WebApp.sendData
+  ) {
+    console.error(
+      "Telegram WebApp sendData is unavailable."
+    );
 
-function reportResult(result){
+    return;
+  }
+
   try {
-    if (isTG && Telegram.WebApp.sendData) {
-      const u = Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user;
-      const name = u ? ((u.first_name||'') + (u.last_name?(' '+u.last_name):'')) : 'Guest';
-      const handle = u && u.username ? ('@'+u.username) : '';
-      Telegram.WebApp.sendData(`Result=${result}; User=${name}${handle?' '+handle:''}`);
-    }
-  } catch(e){}
+    const user =
+      Telegram.WebApp
+        .initDataUnsafe &&
+      Telegram.WebApp
+        .initDataUnsafe.user
+        ? Telegram.WebApp
+            .initDataUnsafe.user
+        : null;
 
-  if (BOT_TOKEN && TARGET_CHAT_ID) {
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: TARGET_CHAT_ID, text: `🎯 PCD Lucky Wheel\nResult: ${result}` })
-    }).catch(()=>{});
+    const data = {
+      action: "wheel_result",
+      result: result,
+      isWinner: isWinner,
+      message: botMessage,
+      user: {
+        id: user
+          ? user.id
+          : null,
+
+        firstName: user
+          ? user.first_name || ""
+          : "",
+
+        lastName: user
+          ? user.last_name || ""
+          : "",
+
+        username: user
+          ? user.username || ""
+          : ""
+      }
+    };
+
+    Telegram.WebApp.sendData(
+      JSON.stringify(data)
+    );
+
+    setTimeout(() => {
+      Telegram.WebApp.close();
+    }, 500);
+
+  } catch (error) {
+    console.error(
+      "Result sending failed:",
+      error
+    );
   }
 }
+
+document
+  .getElementById("subBtn")
+  .addEventListener(
+    "click",
+    () => {
+      if (isTG) {
+        Telegram.WebApp
+          .openTelegramLink(
+            "https://t.me/pcatdolls"
+          );
+      } else {
+        window.open(
+          "https://t.me/pcatdolls",
+          "_blank"
+        );
+      }
+
+      bonusSpins++;
+      saveState();
+      updateUI();
+    }
+  );
+
+document
+  .getElementById("shareBtn")
+  .addEventListener(
+    "click",
+    () => {
+      const shareUrl =
+        "https://t.me/share/url" +
+        "?url=" +
+        encodeURIComponent(
+          "https://t.me/pcatdolls"
+        ) +
+        "&text=" +
+        encodeURIComponent(
+          "PCD Lucky Wheel"
+        );
+
+      if (isTG) {
+        Telegram.WebApp
+          .openTelegramLink(
+            shareUrl
+          );
+      } else {
+        window.open(
+          shareUrl,
+          "_blank"
+        );
+      }
+
+      bonusSpins++;
+      saveState();
+      updateUI();
+    }
+  );
 </script>
+
 </body>
 </html>
