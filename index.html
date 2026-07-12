@@ -224,9 +224,9 @@ const colors = [
   "#cbb2fe",
 ];
 
-/* 14天一次免费抽奖 */
+/* 30天一次免费抽奖 */
 const FOURTEEN_DAYS =
-  10 * 1000;
+ 10 * 1000;
 
 const LS_LAST = "pcdLastSpinAt";
 const LS_BONUS = "pcdBonusSpins";
@@ -545,7 +545,7 @@ function onDone(spinAngleDeg) {
   reportResult(result);
 }
 
-function reportResult(async function reportResult(result) {
+async function reportResult(result) {
   const tg = window.Telegram?.WebApp;
 
   if (!tg || !tg.initData) {
@@ -596,7 +596,6 @@ function reportResult(async function reportResult(result) {
     setTimeout(() => {
       tg.close();
     }, 700);
-
   } catch (error) {
     console.error(
       "Wheel result sending failed:",
