@@ -545,82 +545,61 @@ function onDone(spinAngleDeg) {
   reportResult(result);
 }
 
-function reportResult(result) {
-  const isWinner =
-    !/Sorry/i.test(result);
+function reportResult(async function reportResult(result) {
+  const tg = window.Telegram?.WebApp;
 
-  let botMessage;
-
-  if (isWinner) {
-    botMessage =
-      "🎉 恭喜中奖 / Congratulations!\n" +
-      result +
-      "\n\n" +
-      "‼️ 不適用於有 VIP 圖示的女生 /\n" +
-      "‼️ Not valid for girls with the VIP badge\n\n" +
-      "‼️ 優惠必須於一週內使用完成 /\n" +
-      "‼️ Prize must be redeemed within 7 days";
-  } else {
-    botMessage =
-      "谢谢参与 / Thanks for playing";
-  }
-
-  if (
-    !isTG ||
-    !Telegram.WebApp.sendData
-  ) {
+  if (!tg || !tg.initData) {
     console.error(
-      "Telegram WebApp sendData is unavailable."
+      "Telegram Mini App initData is unavailable."
     );
-
     return;
   }
 
   try {
-    const user =
-      Telegram.WebApp
-        .initDataUnsafe &&
-      Telegram.WebApp
-        .initDataUnsafe.user
-        ? Telegram.WebApp
-            .initDataUnsafe.user
-        : null;
-
-    const data = {
-      action: "wheel_result",
-      result: result,
-      isWinner: isWinner,
-      message: botMessage,
-      user: {
-        id: user
-          ? user.id
-          : null,
-
-        firstName: user
-          ? user.first_name || ""
-          : "",
-
-        lastName: user
-          ? user.last_name || ""
-          : "",
-
-        username: user
-          ? user.username || ""
-          : ""
+    const response = await fetch(
+      "https://pcatdolls-auto-channel-bot.onrender.com/wheel-result",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          initData: tg.initData,
+          result: result
+        })
       }
-    };
+    );
 
-    Telegram.WebApp.sendData(
-      JSON.stringify(data)
+    const responseText = await response.text();
+    let responseData;
+
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (error) {
+      throw new Error(
+        "Render returned an invalid response."
+      );
+    }
+
+    if (!response.ok || !responseData.ok) {
+      throw new Error(
+        responseData.error ||
+        "Result sending failed."
+      );
+    }
+
+    console.log(
+      "Wheel result sent successfully:",
+      result
     );
 
     setTimeout(() => {
-      Telegram.WebApp.close();
-    }, 500);
+      tg.close();
+    }, 700);
 
   } catch (error) {
     console.error(
-      "Result sending failed:",
+      "Wheel result sending failed:",
       error
     );
   }
