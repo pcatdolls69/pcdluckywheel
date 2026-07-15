@@ -14,9 +14,7 @@
     --pink-text: #5a0060;
   }
 
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   body {
     margin: 0;
@@ -61,9 +59,7 @@
     z-index: 2;
   }
 
-  #centerPointer polygon {
-    fill: #000;
-  }
+  #centerPointer polygon { fill: #000; }
 
   #spinBtn,
   .cta button {
@@ -84,9 +80,7 @@
     top: -18px;
   }
 
-  #spinBtn:active {
-    transform: scale(.98);
-  }
+  #spinBtn:active { transform: scale(.98); }
 
   #spinBtn:disabled,
   .cta button:disabled {
@@ -121,9 +115,7 @@
     top: -14px;
   }
 
-  .cta button {
-    padding: 10px 16px;
-  }
+  .cta button { padding: 10px 16px; }
 
   #footer {
     margin: 6px 10px 18px;
@@ -147,9 +139,7 @@
       max-height: 420px;
     }
 
-    .cta {
-      flex-wrap: wrap;
-    }
+    .cta { flex-wrap: wrap; }
   }
 </style>
 </head>
@@ -204,8 +194,12 @@ const tg = window.Telegram?.WebApp || null;
 const isTG = Boolean(tg);
 
 if (isTG) {
-  tg.ready();
-  tg.expand();
+  try {
+    tg.ready();
+    tg.expand();
+  } catch (error) {
+    console.error("Telegram WebApp initialization failed:", error);
+  }
 }
 
 /* =========================
@@ -235,15 +229,20 @@ const colors = [
 ];
 
 /* =========================
-   30 天限制与云端储存
+   次数规则与储存
+   每 30 天恢复 2 次免费机会
 ========================= */
 
+const FREE_SPINS_PER_PERIOD = 2;
 const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
-const CLOUD_KEY = "pcdLuckyWheelStateV5";
-const LOCAL_KEY = "pcdLuckyWheelStateV5Backup";
+const CLOUD_TIMEOUT_MS = 2500;
+
+const CLOUD_KEY = "pcdLuckyWheelStateV6";
+const LOCAL_KEY = "pcdLuckyWheelStateV6Backup";
 
 const defaultState = {
-  lastSpinAt: 0,
+  periodStartedAt: 0,
+  freeSpinsRemaining: FREE_SPINS_PER_PERIOD,
   bonusSpins: 0,
   subscribedBonusUsed: false,
   sharedBonusUsed: false
@@ -263,7 +262,46 @@ const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 
 /* =========================
-   储存工具
+   状态整理
+========================= */
+
+function normalizeState(value) {
+  const source = value && typeof value === "object" ? value : {};
+
+  return {
+    periodStartedAt: Math.max(0, Number(source.periodStartedAt) || 0),
+    freeSpinsRemaining: Math.min(
+      FREE_SPINS_PER_PERIOD,
+      Math.max(
+        0,
+        Number.isFinite(Number(source.freeSpinsRemaining))
+          ? Number(source.freeSpinsRemaining)
+          : FREE_SPINS_PER_PERIOD
+      )
+    ),
+    bonusSpins: Math.max(0, Number(source.bonusSpins) || 0),
+    subscribedBonusUsed: Boolean(source.subscribedBonusUsed),
+    sharedBonusUsed: Boolean(source.sharedBonusUsed)
+  };
+}
+
+function refreshPeriodIfNeeded() {
+  const now = Date.now();
+
+  if (
+    state.periodStartedAt === 0 ||
+    now - state.periodStartedAt >= COOLDOWN_MS
+  ) {
+    state.periodStartedAt = now;
+    state.freeSpinsRemaining = FREE_SPINS_PER_PERIOD;
+    return true;
+  }
+
+  return false;
+}
+
+/* =========================
+   本机储存
 ========================= */
 
 function readLocalBackup() {
@@ -279,9 +317,25 @@ function readLocalBackup() {
 function writeLocalBackup(value) {
   try {
     localStorage.setItem(LOCAL_KEY, JSON.stringify(value));
+    return true;
   } catch (error) {
     console.error("Local backup write failed:", error);
+    return false;
   }
+}
+
+/* =========================
+   Telegram CloudStorage
+   加入 timeout，避免永远卡在 Loading
+========================= */
+
+function withTimeout(promise, timeoutMs, fallbackValue) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => {
+      setTimeout(() => resolve(fallbackValue), timeoutMs);
+    })
+  ]);
 }
 
 function cloudGetItem(key) {
@@ -291,92 +345,136 @@ function cloudGetItem(key) {
       return;
     }
 
-    tg.CloudStorage.getItem(key, (error, value) => {
-      if (error) {
-        console.error("CloudStorage getItem failed:", error);
-        resolve(null);
-        return;
-      }
+    try {
+      tg.CloudStorage.getItem(key, (error, value) => {
+        if (error) {
+          console.error("CloudStorage getItem failed:", error);
+          resolve(null);
+          return;
+        }
 
-      resolve(value || null);
-    });
+        resolve(value || null);
+      });
+    } catch (error) {
+      console.error("CloudStorage getItem exception:", error);
+      resolve(null);
+    }
   });
 }
 
 function cloudSetItem(key, value) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (!isTG || !tg.CloudStorage) {
       resolve(false);
       return;
     }
 
-    tg.CloudStorage.setItem(key, value, (error, stored) => {
-      if (error) {
-        reject(error);
-        return;
-      }
+    try {
+      tg.CloudStorage.setItem(key, value, (error) => {
+        if (error) {
+          console.error("CloudStorage setItem failed:", error);
+          resolve(false);
+          return;
+        }
 
-      resolve(Boolean(stored));
-    });
+        resolve(true);
+      });
+    } catch (error) {
+      console.error("CloudStorage setItem exception:", error);
+      resolve(false);
+    }
   });
 }
 
 async function loadState() {
-  let loaded = null;
+  /*
+    先读本机，保证按钮不会因为 Telegram 云端无响应而永久锁住。
+  */
+  const localValue = readLocalBackup();
 
-  try {
-    const cloudRaw = await cloudGetItem(CLOUD_KEY);
-
-    if (cloudRaw) {
-      loaded = JSON.parse(cloudRaw);
-    }
-  } catch (error) {
-    console.error("Cloud state parse failed:", error);
+  if (localValue) {
+    state = normalizeState(localValue);
+  } else {
+    state = normalizeState(defaultState);
   }
 
-  if (!loaded) {
-    loaded = readLocalBackup();
-  }
-
-  if (loaded && typeof loaded === "object") {
-    state = {
-      ...defaultState,
-      ...loaded,
-      lastSpinAt: Number(loaded.lastSpinAt) || 0,
-      bonusSpins: Math.max(0, Number(loaded.bonusSpins) || 0),
-      subscribedBonusUsed: Boolean(loaded.subscribedBonusUsed),
-      sharedBonusUsed: Boolean(loaded.sharedBonusUsed)
-    };
-  }
-
+  refreshPeriodIfNeeded();
   stateLoaded = true;
   writeLocalBackup(state);
   updateUI();
+
+  /*
+    再尝试云端同步；最多等待 2.5 秒。
+  */
+  try {
+    const cloudRaw = await withTimeout(
+      cloudGetItem(CLOUD_KEY),
+      CLOUD_TIMEOUT_MS,
+      null
+    );
+
+    if (cloudRaw) {
+      const cloudValue = normalizeState(JSON.parse(cloudRaw));
+
+      /*
+        以较严格的状态为准，避免重新开启后恢复已用次数。
+      */
+      state = {
+        periodStartedAt: Math.max(
+          state.periodStartedAt,
+          cloudValue.periodStartedAt
+        ),
+        freeSpinsRemaining: Math.min(
+          state.freeSpinsRemaining,
+          cloudValue.freeSpinsRemaining
+        ),
+        bonusSpins: Math.min(
+          state.bonusSpins,
+          cloudValue.bonusSpins
+        ),
+        subscribedBonusUsed:
+          state.subscribedBonusUsed ||
+          cloudValue.subscribedBonusUsed,
+        sharedBonusUsed:
+          state.sharedBonusUsed ||
+          cloudValue.sharedBonusUsed
+      };
+
+      refreshPeriodIfNeeded();
+      writeLocalBackup(state);
+      updateUI();
+    }
+  } catch (error) {
+    console.error("Cloud state load failed:", error);
+  }
 }
 
 async function saveState() {
   saving = true;
   updateUI();
 
-  const cleanState = {
-    lastSpinAt: Number(state.lastSpinAt) || 0,
-    bonusSpins: Math.max(0, Number(state.bonusSpins) || 0),
-    subscribedBonusUsed: Boolean(state.subscribedBonusUsed),
-    sharedBonusUsed: Boolean(state.sharedBonusUsed)
-  };
+  const cleanState = normalizeState(state);
+  state = cleanState;
 
-  writeLocalBackup(cleanState);
+  const localSaved = writeLocalBackup(cleanState);
 
-  try {
-    if (isTG && tg.CloudStorage) {
-      await cloudSetItem(CLOUD_KEY, JSON.stringify(cleanState));
-    }
-  } catch (error) {
-    console.error("Cloud state save failed:", error);
-    throw error;
-  } finally {
-    saving = false;
-    updateUI();
+  /*
+    本机储存成功就继续转盘。
+    云端失败不再让按钮卡死或还原成不能转。
+  */
+  if (isTG && tg.CloudStorage) {
+    await withTimeout(
+      cloudSetItem(CLOUD_KEY, JSON.stringify(cleanState)),
+      CLOUD_TIMEOUT_MS,
+      false
+    );
+  }
+
+  saving = false;
+  updateUI();
+
+  if (!localSaved) {
+    throw new Error("Local storage failed.");
   }
 }
 
@@ -384,15 +482,8 @@ async function saveState() {
    次数与倒数
 ========================= */
 
-function baseSpinAvailable() {
-  return (
-    state.lastSpinAt === 0 ||
-    Date.now() - state.lastSpinAt >= COOLDOWN_MS
-  );
-}
-
 function totalChances() {
-  return (baseSpinAvailable() ? 1 : 0) + state.bonusSpins;
+  return state.freeSpinsRemaining + state.bonusSpins;
 }
 
 function fmtDuration(ms) {
@@ -412,6 +503,10 @@ function fmtDuration(ms) {
 }
 
 function updateUI() {
+  if (stateLoaded && refreshPeriodIfNeeded()) {
+    writeLocalBackup(state);
+  }
+
   chancesEl.textContent = stateLoaded ? String(totalChances()) : "0";
 
   if (!stateLoaded) {
@@ -439,13 +534,8 @@ function updateUI() {
     spinBtn.textContent = "开始抽奖 / Start";
   }
 
-  subBtn.disabled =
-    saving ||
-    state.subscribedBonusUsed;
-
-  shareBtn.disabled =
-    saving ||
-    state.sharedBonusUsed;
+  subBtn.disabled = saving || state.subscribedBonusUsed;
+  shareBtn.disabled = saving || state.sharedBonusUsed;
 
   subBtn.textContent = state.subscribedBonusUsed
     ? "✅ 已领取 / Claimed"
@@ -455,14 +545,14 @@ function updateUI() {
     ? "✅ 已领取 / Claimed"
     : "🔗 分享 / Share（+1）";
 
-  if (!baseSpinAvailable()) {
+  if (state.freeSpinsRemaining <= 0) {
     const remainMs =
       COOLDOWN_MS -
-      (Date.now() - state.lastSpinAt);
+      (Date.now() - state.periodStartedAt);
 
     cooldownEl.hidden = false;
     cooldownEl.textContent =
-      "下次免费转盘倒计时 / Next free spin in: " +
+      "下次免费次数恢复 / Free spins reset in: " +
       fmtDuration(remainMs);
   } else {
     cooldownEl.hidden = true;
@@ -508,16 +598,11 @@ function drawWheel(angleOffset = 0) {
     const textRadius = radius - 48;
     let fontSize = 18;
 
-    ctx.font =
-      `bold ${fontSize}px Arial, "Noto Sans SC", sans-serif`;
+    ctx.font = `bold ${fontSize}px Arial, "Noto Sans SC", sans-serif`;
 
-    while (
-      ctx.measureText(text).width > maxWidth &&
-      fontSize > 12
-    ) {
+    while (ctx.measureText(text).width > maxWidth && fontSize > 12) {
       fontSize--;
-      ctx.font =
-        `bold ${fontSize}px Arial, "Noto Sans SC", sans-serif`;
+      ctx.font = `bold ${fontSize}px Arial, "Noto Sans SC", sans-serif`;
     }
 
     ctx.fillText(text, textRadius, 0);
@@ -532,27 +617,28 @@ drawWheel();
 ========================= */
 
 spinBtn.addEventListener("click", async () => {
-  if (!stateLoaded || spinning || saving) {
-    return;
-  }
+  if (!stateLoaded || spinning || saving) return;
+
+  refreshPeriodIfNeeded();
 
   if (totalChances() <= 0) {
-    showMessage(
-      "目前没有抽奖次数。\nNo chances available."
-    );
+    showMessage("目前没有抽奖次数。\nNo chances available.");
     return;
   }
 
   spinning = true;
 
   /*
-    先扣次数并储存，再开始动画。
-    这样即使抽奖过程中关闭页面，也不会恢复次数。
+    记录本次扣的是哪一种次数，储存失败时可正确还原。
   */
+  let consumedType = "";
+
   if (state.bonusSpins > 0) {
     state.bonusSpins--;
+    consumedType = "bonus";
   } else {
-    state.lastSpinAt = Date.now();
+    state.freeSpinsRemaining--;
+    consumedType = "free";
   }
 
   updateUI();
@@ -560,14 +646,13 @@ spinBtn.addEventListener("click", async () => {
   try {
     await saveState();
   } catch (error) {
-    /*
-      云端储存失败时还原次数，避免误扣。
-    */
-    if (state.lastSpinAt > 0 &&
-        Date.now() - state.lastSpinAt < 10000) {
-      state.lastSpinAt = 0;
-    } else {
+    if (consumedType === "bonus") {
       state.bonusSpins++;
+    } else if (consumedType === "free") {
+      state.freeSpinsRemaining = Math.min(
+        FREE_SPINS_PER_PERIOD,
+        state.freeSpinsRemaining + 1
+      );
     }
 
     spinning = false;
@@ -580,29 +665,15 @@ spinBtn.addEventListener("click", async () => {
     return;
   }
 
-  const spinAngle =
-    360 * 5 +
-    Math.random() * 360;
-
+  const spinAngle = 360 * 5 + Math.random() * 360;
   const duration = 4200;
   const startTime = performance.now();
 
   function step(now) {
-    const progress = Math.min(
-      (now - startTime) / duration,
-      1
-    );
+    const progress = Math.min((now - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
 
-    const ease =
-      1 -
-      Math.pow(1 - progress, 3);
-
-    drawWheel(
-      ease *
-      spinAngle *
-      Math.PI /
-      180
-    );
+    drawWheel(ease * spinAngle * Math.PI / 180);
 
     if (progress < 1) {
       requestAnimationFrame(step);
@@ -617,17 +688,16 @@ spinBtn.addEventListener("click", async () => {
 });
 
 function onDone(spinAngleDeg) {
-  const numberOfPrizes = prizes.length;
-  const raw = (spinAngleDeg % 360) / 360;
+  const count = prizes.length;
+  const arcDeg = 360 / count;
 
-  const index =
-    (
-      numberOfPrizes -
-      1 -
-      Math.floor(raw * numberOfPrizes)
-    ) % numberOfPrizes;
-
+  /*
+    指针位于正上方（-90°），计算最终落点。
+  */
+  const normalized = ((-90 - spinAngleDeg) % 360 + 360) % 360;
+  const index = Math.floor(normalized / arcDeg) % count;
   const result = prizes[index];
+
   reportResult(result);
 }
 
@@ -637,8 +707,9 @@ function onDone(spinAngleDeg) {
 
 async function reportResult(result) {
   if (!tg || !tg.initData) {
-    console.error(
-      "Telegram Mini App initData is unavailable."
+    console.error("Telegram Mini App initData is unavailable.");
+    showMessage(
+      "抽奖完成，请截图保存结果。\nSpin completed. Please take a screenshot."
     );
     return;
   }
@@ -664,31 +735,24 @@ async function reportResult(result) {
     try {
       responseData = JSON.parse(responseText);
     } catch (error) {
-      throw new Error(
-        "Render returned an invalid response."
-      );
+      throw new Error("Render returned an invalid response.");
     }
 
     if (!response.ok || !responseData.ok) {
-      throw new Error(
-        responseData.error ||
-        "Result sending failed."
-      );
+      throw new Error(responseData.error || "Result sending failed.");
     }
 
-    console.log(
-      "Wheel result sent successfully:",
-      result
-    );
+    console.log("Wheel result sent successfully:", result);
 
     setTimeout(() => {
-      tg.close();
+      try {
+        tg.close();
+      } catch (error) {
+        console.error("Telegram close failed:", error);
+      }
     }, 700);
   } catch (error) {
-    console.error(
-      "Wheel result sending failed:",
-      error
-    );
+    console.error("Wheel result sending failed:", error);
 
     showMessage(
       "抽奖结果传送失败，请截图保存结果。\nResult sending failed. Please take a screenshot."
@@ -701,9 +765,7 @@ async function reportResult(result) {
 ========================= */
 
 subBtn.addEventListener("click", async () => {
-  if (!stateLoaded || saving) {
-    return;
-  }
+  if (!stateLoaded || saving) return;
 
   if (state.subscribedBonusUsed) {
     showMessage(
@@ -713,15 +775,13 @@ subBtn.addEventListener("click", async () => {
   }
 
   if (isTG) {
-    tg.openTelegramLink(
-      "https://t.me/pcatdolls"
-    );
+    try {
+      tg.openTelegramLink("https://t.me/pcatdolls");
+    } catch (error) {
+      console.error("Telegram link open failed:", error);
+    }
   } else {
-    window.open(
-      "https://t.me/pcatdolls",
-      "_blank",
-      "noopener"
-    );
+    window.open("https://t.me/pcatdolls", "_blank", "noopener");
   }
 
   state.subscribedBonusUsed = true;
@@ -730,15 +790,10 @@ subBtn.addEventListener("click", async () => {
 
   try {
     await saveState();
-    showMessage(
-      "已增加一次抽奖机会！\nOne chance added!"
-    );
+    showMessage("已增加一次抽奖机会！\nOne chance added!");
   } catch (error) {
     state.subscribedBonusUsed = false;
-    state.bonusSpins = Math.max(
-      0,
-      state.bonusSpins - 1
-    );
+    state.bonusSpins = Math.max(0, state.bonusSpins - 1);
     writeLocalBackup(state);
     updateUI();
 
@@ -753,9 +808,7 @@ subBtn.addEventListener("click", async () => {
 ========================= */
 
 shareBtn.addEventListener("click", async () => {
-  if (!stateLoaded || saving) {
-    return;
-  }
+  if (!stateLoaded || saving) return;
 
   if (state.sharedBonusUsed) {
     showMessage(
@@ -767,22 +820,18 @@ shareBtn.addEventListener("click", async () => {
   const shareUrl =
     "https://t.me/share/url" +
     "?url=" +
-    encodeURIComponent(
-      "https://t.me/pcatdolls"
-    ) +
+    encodeURIComponent("https://t.me/pcatdolls") +
     "&text=" +
-    encodeURIComponent(
-      "PCD Lucky Wheel"
-    );
+    encodeURIComponent("PCD Lucky Wheel");
 
   if (isTG) {
-    tg.openTelegramLink(shareUrl);
+    try {
+      tg.openTelegramLink(shareUrl);
+    } catch (error) {
+      console.error("Telegram share link failed:", error);
+    }
   } else {
-    window.open(
-      shareUrl,
-      "_blank",
-      "noopener"
-    );
+    window.open(shareUrl, "_blank", "noopener");
   }
 
   state.sharedBonusUsed = true;
@@ -791,15 +840,10 @@ shareBtn.addEventListener("click", async () => {
 
   try {
     await saveState();
-    showMessage(
-      "已增加一次抽奖机会！\nOne chance added!"
-    );
+    showMessage("已增加一次抽奖机会！\nOne chance added!");
   } catch (error) {
     state.sharedBonusUsed = false;
-    state.bonusSpins = Math.max(
-      0,
-      state.bonusSpins - 1
-    );
+    state.bonusSpins = Math.max(0, state.bonusSpins - 1);
     writeLocalBackup(state);
     updateUI();
 
@@ -811,10 +855,15 @@ shareBtn.addEventListener("click", async () => {
 
 function showMessage(message) {
   if (isTG && typeof tg.showAlert === "function") {
-    tg.showAlert(message);
-  } else {
-    alert(message);
+    try {
+      tg.showAlert(message);
+      return;
+    } catch (error) {
+      console.error("Telegram alert failed:", error);
+    }
   }
+
+  alert(message);
 }
 
 /* 初始化 */
