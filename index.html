@@ -9,202 +9,431 @@
 
 <style>
   :root {
-    --soft-pink: #ffe6f9;
-    --soft-purple: #f3c8f0;
-    --pink-text: #5a0060;
+    --pink-1: #ffd7ec;
+    --pink-2: #f7a8d2;
+    --pink-3: #ef6cae;
+    --purple-1: #d7c3ff;
+    --purple-2: #bea2f4;
+    --yellow: #ffe16d;
+    --deep-pink: #d91468;
+    --button-text: #6d0749;
   }
 
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
 
+  html,
   body {
     margin: 0;
-    color: #333;
-    font-family: "Noto Sans SC", Arial, sans-serif;
-    background: #222;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
+    min-height: 100%;
   }
 
-  h2 {
-    margin: 18px 0 8px;
+  body {
     color: #fff;
+    font-family: Arial, "Noto Sans SC", "PingFang SC", sans-serif;
+    background:
+      radial-gradient(circle at 50% 18%, rgba(255, 115, 190, .15), transparent 30%),
+      linear-gradient(180deg, #090a0f 0%, #0e1018 52%, #08090e 100%);
+    display: flex;
+    justify-content: center;
   }
 
-  #wheel-container {
+  .page {
+    width: min(100%, 760px);
+    min-height: 100vh;
+    padding: 28px 18px 26px;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  h1 {
+    margin: 0 0 24px;
+    font-size: clamp(30px, 7vw, 48px);
+    line-height: 1.12;
+    letter-spacing: .4px;
+    text-shadow:
+      0 0 6px rgba(255, 255, 255, .9),
+      0 0 14px rgba(255, 105, 180, .75);
+  }
+
+  .wheel-stage {
     position: relative;
-    width: 420px;
-    height: 420px;
-    overflow: visible;
-    margin-top: 6px;
+    width: min(92vw, 660px);
+    aspect-ratio: 1;
+    margin: 0 auto;
   }
 
-  canvas {
+  .sparkle {
+    position: absolute;
+    color: #ff9fd1;
+    font-size: clamp(23px, 5vw, 38px);
+    text-shadow: 0 0 13px rgba(255, 93, 179, .9);
+    z-index: 5;
+    user-select: none;
+  }
+
+  .sparkle.s1 { left: -1%; top: 4%; }
+  .sparkle.s2 { right: -1%; top: 7%; }
+  .sparkle.s3 { left: 5%; top: 13%; }
+  .sparkle.s4 { right: 4%; top: 14%; }
+
+  .pointer {
+    position: absolute;
+    z-index: 10;
+    left: 50%;
+    top: -3%;
+    width: 11%;
+    aspect-ratio: 1 / 1.25;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 0 8px rgba(255, 112, 183, .9));
+  }
+
+  .pointer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: #f26aad;
+    border: 5px solid #fff;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    border-radius: 16px;
+  }
+
+  .wheel-ring {
+    position: absolute;
+    inset: 4%;
+    border-radius: 50%;
+    padding: 3.3%;
+    background:
+      radial-gradient(circle, rgba(255,255,255,.95) 0 20%, transparent 21%),
+      repeating-conic-gradient(
+        from -90deg,
+        #fff8d7 0deg 2deg,
+        transparent 2deg 22.5deg
+      ),
+      linear-gradient(145deg, #ffbbdf, #ef85bd);
+    box-shadow:
+      0 0 0 5px rgba(255,255,255,.94),
+      0 0 22px rgba(255, 125, 199, .95),
+      0 0 55px rgba(255, 120, 200, .48);
+  }
+
+  .wheel-shell {
+    position: relative;
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background: #fff;
-    box-shadow:
-      0 0 30px rgba(255,255,255,.85),
-      0 0 60px rgba(255,200,255,.6);
+    overflow: hidden;
+    border: 4px solid rgba(255,255,255,.95);
+    box-shadow: inset 0 0 18px rgba(255,255,255,.55);
+    transition: transform 4.2s cubic-bezier(.12,.72,.09,1);
+    will-change: transform;
   }
 
-  #centerPointer {
+  .wheel-face {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 2;
+    border-radius: 50%;
+    background:
+      conic-gradient(
+        from -22.5deg,
+        var(--pink-1) 0deg 45deg,
+        var(--purple-1) 45deg 90deg,
+        var(--yellow) 90deg 135deg,
+        var(--purple-2) 135deg 180deg,
+        var(--pink-1) 180deg 225deg,
+        var(--purple-1) 225deg 270deg,
+        var(--pink-1) 270deg 315deg,
+        var(--purple-2) 315deg 360deg
+      );
   }
 
-  #centerPointer polygon { fill: #000; }
+  .wheel-face::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+      repeating-conic-gradient(
+        from -22.5deg,
+        transparent 0deg 44.3deg,
+        rgba(255,255,255,.9) 44.3deg 45deg
+      );
+    pointer-events: none;
+  }
 
-  #spinBtn,
-  .cta button {
-    background: var(--soft-pink);
-    border: 2px solid var(--soft-purple);
-    border-radius: 16px;
-    color: var(--pink-text);
-    font-weight: 700;
-    box-shadow: 0 3px 6px rgba(0,0,0,.15);
-    cursor: pointer;
+  .label {
+    position: absolute;
+    width: 30%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-weight: 800;
+    font-size: clamp(13px, 3.5vw, 24px);
+    line-height: 1.18;
+    color: #26184a;
+    text-shadow: 0 1px 0 rgba(255,255,255,.72);
+    z-index: 2;
+    white-space: nowrap;
+  }
+
+  .label .off {
+    color: var(--deep-pink);
+  }
+
+  /* 八個獎項固定在各自扇形中央，避免文字全部擠在中間 */
+  .label:nth-child(1) { left: 50%; top: 18%; }
+  .label:nth-child(2) { left: 72%; top: 29%; }
+  .label:nth-child(3) { left: 82%; top: 50%; }
+  .label:nth-child(4) { left: 72%; top: 71%; }
+  .label:nth-child(5) { left: 50%; top: 82%; }
+  .label:nth-child(6) { left: 28%; top: 71%; }
+  .label:nth-child(7) { left: 18%; top: 50%; }
+  .label:nth-child(8) { left: 28%; top: 29%; }
+
+  .hub {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 22%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: linear-gradient(145deg, #fff, #f5f5f7);
+    box-shadow:
+      0 6px 14px rgba(0,0,0,.22),
+      inset 0 0 0 3px rgba(255,255,255,.92);
+    z-index: 6;
+    display: grid;
+    place-items: center;
+    font-size: clamp(34px, 10vw, 72px);
+  }
+
+  .controls {
+    margin-top: 12px;
   }
 
   #spinBtn {
-    margin-top: 8px;
-    padding: 12px 28px;
-    font-size: 18px;
-    position: relative;
-    top: -18px;
+    width: min(74vw, 430px);
+    border: 3px solid #ef7fbb;
+    border-radius: 26px;
+    padding: 17px 24px;
+    background:
+      linear-gradient(90deg, #f7a7d3, #ffd4e8 48%, #f6a5d1);
+    color: #5d073f;
+    font-weight: 800;
+    font-size: clamp(22px, 5vw, 34px);
+    box-shadow:
+      0 5px 0 rgba(120, 18, 81, .45),
+      0 0 20px rgba(255, 108, 181, .45);
   }
 
-  #spinBtn:active { transform: scale(.98); }
+  #spinBtn:active {
+    transform: translateY(2px);
+    box-shadow:
+      0 2px 0 rgba(120, 18, 81, .45),
+      0 0 14px rgba(255, 108, 181, .35);
+  }
 
-  #spinBtn:disabled,
-  .cta button:disabled {
-    opacity: .5;
-    cursor: not-allowed;
+  #spinBtn:disabled {
+    opacity: .6;
   }
 
   #status {
-    margin-top: 0;
-    font-size: 14px;
-    color: #fff;
-    position: relative;
-    top: -14px;
+    margin-top: 26px;
+    font-size: clamp(19px, 4.5vw, 29px);
   }
 
   #cooldown {
-    margin-top: 4px;
-    font-size: 13px;
-    color: #cfc7ff;
-    position: relative;
-    top: -10px;
-    text-align: center;
-    min-height: 20px;
+    margin-top: 18px;
+    font-size: clamp(16px, 3.9vw, 25px);
+    line-height: 1.5;
+  }
+
+  #cooldown .time {
+    color: #f58fc6;
+    font-weight: 800;
   }
 
   .cta {
-    display: flex;
-    gap: 10px;
-    margin-top: 8px;
-    justify-content: center;
-    position: relative;
-    top: -14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin: 28px auto 30px;
   }
 
-  .cta button { padding: 10px 16px; }
+  .cta button {
+    border: 3px solid #ef7fbb;
+    border-radius: 25px;
+    padding: 17px 10px;
+    background:
+      linear-gradient(90deg, #f7a7d3, #ffd4e8 48%, #f6a5d1);
+    color: var(--button-text);
+    font-size: clamp(15px, 3.6vw, 23px);
+    font-weight: 800;
+    box-shadow: 0 4px 0 rgba(120, 18, 81, .35);
+  }
 
-  #footer {
-    margin: 6px 10px 18px;
+  .cta button:disabled {
+    opacity: .55;
+  }
+
+  .rules {
+    border-top: 1px solid rgba(255,255,255,.15);
+  }
+
+  .rule {
+    display: grid;
+    grid-template-columns: 62px 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 22px 4px;
+    border-bottom: 1px solid rgba(255,255,255,.15);
+    text-align: left;
+  }
+
+  .rule-icon {
+    font-size: clamp(34px, 8vw, 52px);
     text-align: center;
-    font-size: 13px;
-    color: #fff;
-    line-height: 1.7;
   }
 
-  #footer a {
-    color: #fff;
-    font-weight: 700;
+  .rule-text {
+    font-size: clamp(17px, 4.1vw, 26px);
+    line-height: 1.5;
+  }
+
+  .channel-link {
+    display: inline-block;
+    margin-top: 20px;
+    color: #f28cc2;
     text-decoration: none;
+    font-size: clamp(20px, 4.7vw, 30px);
+    font-weight: 700;
   }
 
-  @media (max-width: 460px) {
-    #wheel-container {
-      width: 94vw;
-      height: 94vw;
-      max-width: 420px;
-      max-height: 420px;
+  @media (max-width: 520px) {
+    .page {
+      padding-left: 14px;
+      padding-right: 14px;
     }
 
-    .cta { flex-wrap: wrap; }
+    .wheel-stage {
+      width: 96vw;
+      margin-left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .label {
+      width: 31%;
+      font-size: clamp(12px, 3.5vw, 18px);
+    }
+
+    .rule {
+      grid-template-columns: 48px 1fr;
+    }
   }
 </style>
 </head>
 
 <body>
+<main class="page">
+  <h1>幸运转盘 / Lucky Wheel</h1>
 
-<h2>幸运转盘 / Lucky Wheel</h2>
+  <section class="wheel-stage">
+    <div class="sparkle s1">✦</div>
+    <div class="sparkle s2">✦</div>
+    <div class="sparkle s3">♥</div>
+    <div class="sparkle s4">♡</div>
 
-<div id="wheel-container">
-  <canvas id="wheel" width="420" height="420"></canvas>
+    <div class="pointer"></div>
 
-  <svg id="centerPointer" viewBox="0 0 420 420" aria-hidden="true">
-    <polygon points="209,225 211,225 210,170"></polygon>
-  </svg>
-</div>
+    <div class="wheel-ring">
+      <div id="wheelShell" class="wheel-shell">
+        <div class="wheel-face">
+          <div class="label">⏰45-60<br><span class="off">10 OFF</span></div>
+          <div class="label">Sorry<br>😢</div>
+          <div class="label">⏰45-60<br><span class="off">20 OFF</span></div>
+          <div class="label">Sorry<br>😢</div>
+          <div class="label">⏰45-60<br><span class="off">40 OFF</span></div>
+          <div class="label">Sorry<br>😢</div>
+          <div class="label">⏰45-60<br><span class="off">10 OFF</span></div>
+          <div class="label">Sorry<br>😢</div>
 
-<button id="spinBtn" disabled>读取中 / Loading...</button>
+          <div class="hub">🐾</div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<div id="status">
-  剩余次数 / Chances:
-  <span id="chances">0</span>
-</div>
+  <section class="controls">
+    <button id="spinBtn" disabled>读取中 / Loading...</button>
 
-<div id="cooldown">读取中 / Loading...</div>
+    <div id="status">
+      剩余次数 / Chances:
+      <strong id="chances">0</strong>
+    </div>
 
-<div class="cta">
-  <button id="subBtn" disabled>🔗 订阅 / Subscribe（+1）</button>
-  <button id="shareBtn" disabled>🔗 分享 / Share（+1）</button>
-</div>
+    <div id="cooldown">
+      读取中 / Loading...
+    </div>
 
-<div id="footer">
-  ⚠️ 所有奖项不能重叠使用 / All prizes cannot be combined
-  <br><br>
+    <div class="cta">
+      <button id="subBtn" disabled>🔗 订阅 / Subscribe (+1)</button>
+      <button id="shareBtn" disabled>🔗 分享 / Share (+1)</button>
+    </div>
+  </section>
 
-  ‼️ 不適用於有 VIP 圖示的女生 /
-  Not valid for girls with the VIP badge
-  <br>
+  <section class="rules">
+    <div class="rule">
+      <div class="rule-icon">⚠️</div>
+      <div class="rule-text">
+        所有奖项不能重叠使用 /<br>
+        All prizes cannot be combined
+      </div>
+    </div>
 
-  ‼️ 優惠必須於一週內使用完成 /
-  Prize must be redeemed within 7 days
-  <br>
+    <div class="rule">
+      <div class="rule-icon">‼️</div>
+      <div class="rule-text">
+        不適用於有 VIP 圖示的女生 /<br>
+        Not valid for girls with the VIP badge
+      </div>
+    </div>
 
-  <a href="https://t.me/pcatdolls" target="_blank" rel="noopener">
-    pcatdolls 频道 / Channel
+    <div class="rule">
+      <div class="rule-icon">‼️</div>
+      <div class="rule-text">
+        優惠必須於一週內使用完成 /<br>
+        Prize must be redeemed within 7 days
+      </div>
+    </div>
+  </section>
+
+  <a class="channel-link"
+     href="https://t.me/pcatdolls"
+     target="_blank"
+     rel="noopener">
+    ➤ pcatdolls 频道 / Channel
   </a>
-</div>
+</main>
 
 <script>
 "use strict";
 
-const tg = window.Telegram?.WebApp || null;
-const isTG = Boolean(tg);
+const RESULT_ENDPOINT =
+  "https://pcatdolls-auto-channel-bot.onrender.com/wheel-result";
 
-if (isTG) {
+const tg = window.Telegram?.WebApp || null;
+const isTG = Boolean(tg && tg.initData);
+
+if (tg) {
   try {
     tg.ready();
     tg.expand();
   } catch (error) {
-    console.error("Telegram WebApp initialization failed:", error);
+    console.error("Telegram initialization failed:", error);
   }
 }
-
-/* =========================
-   转盘内容
-========================= */
 
 const prizes = [
   "⏰45-60/10 OFF",
@@ -217,28 +446,20 @@ const prizes = [
   "Sorry 😢"
 ];
 
-const colors = [
-  "#ffd1e8",
-  "#cbb2fe",
-  "#ffe07a",
-  "#cbb2fe",
-  "#ff7ebe",
-  "#cbb2fe",
-  "#ffd1e8",
-  "#cbb2fe"
+const weightedPrizes = [
+  { result: "Sorry 😢", weight: 40 },
+  { result: "⏰45-60/10 OFF", weight: 40 },
+  { result: "⏰45-60/20 OFF", weight: 15 },
+  { result: "⏰45-60/40 OFF", weight: 5 }
 ];
-
-/* =========================
-   次数规则与储存
-   每 30 天恢复 2 次免费机会
-========================= */
 
 const FREE_SPINS_PER_PERIOD = 2;
 const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 const CLOUD_TIMEOUT_MS = 2500;
 
-const CLOUD_KEY = "pcdLuckyWheelStateV6";
-const LOCAL_KEY = "pcdLuckyWheelStateV6Backup";
+const CLOUD_KEY = "pcdLuckyWheelStateV7";
+const LOCAL_KEY = "pcdLuckyWheelStateV7Backup";
+const DEVICE_KEY = "pcdLuckyWheelWebsiteDeviceIdV1";
 
 const defaultState = {
   periodStartedAt: 0,
@@ -249,39 +470,47 @@ const defaultState = {
 };
 
 let state = { ...defaultState };
-let spinning = false;
 let stateLoaded = false;
+let spinning = false;
 let saving = false;
+let currentRotation = 0;
 
-const chancesEl = document.getElementById("chances");
+const wheelShell = document.getElementById("wheelShell");
 const spinBtn = document.getElementById("spinBtn");
+const chancesEl = document.getElementById("chances");
 const cooldownEl = document.getElementById("cooldown");
 const subBtn = document.getElementById("subBtn");
 const shareBtn = document.getElementById("shareBtn");
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
-
-/* =========================
-   状态整理
-========================= */
 
 function normalizeState(value) {
-  const source = value && typeof value === "object" ? value : {};
+  const source =
+    value && typeof value === "object"
+      ? value
+      : {};
 
   return {
-    periodStartedAt: Math.max(0, Number(source.periodStartedAt) || 0),
-    freeSpinsRemaining: Math.min(
-      FREE_SPINS_PER_PERIOD,
-      Math.max(
-        0,
-        Number.isFinite(Number(source.freeSpinsRemaining))
-          ? Number(source.freeSpinsRemaining)
-          : FREE_SPINS_PER_PERIOD
-      )
-    ),
-    bonusSpins: Math.max(0, Number(source.bonusSpins) || 0),
-    subscribedBonusUsed: Boolean(source.subscribedBonusUsed),
-    sharedBonusUsed: Boolean(source.sharedBonusUsed)
+    periodStartedAt:
+      Math.max(0, Number(source.periodStartedAt) || 0),
+
+    freeSpinsRemaining:
+      Math.min(
+        FREE_SPINS_PER_PERIOD,
+        Math.max(
+          0,
+          Number.isFinite(Number(source.freeSpinsRemaining))
+            ? Number(source.freeSpinsRemaining)
+            : FREE_SPINS_PER_PERIOD
+        )
+      ),
+
+    bonusSpins:
+      Math.max(0, Number(source.bonusSpins) || 0),
+
+    subscribedBonusUsed:
+      Boolean(source.subscribedBonusUsed),
+
+    sharedBonusUsed:
+      Boolean(source.sharedBonusUsed)
   };
 }
 
@@ -300,63 +529,69 @@ function refreshPeriodIfNeeded() {
   return false;
 }
 
-/* =========================
-   本机储存
-========================= */
-
 function readLocalBackup() {
   try {
     const raw = localStorage.getItem(LOCAL_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch (error) {
-    console.error("Local backup read failed:", error);
+    console.error("Local state read failed:", error);
     return null;
   }
 }
 
 function writeLocalBackup(value) {
   try {
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(value));
+    localStorage.setItem(
+      LOCAL_KEY,
+      JSON.stringify(value)
+    );
     return true;
   } catch (error) {
-    console.error("Local backup write failed:", error);
+    console.error("Local state write failed:", error);
     return false;
   }
 }
-
-/* =========================
-   Telegram CloudStorage
-   加入 timeout，避免永远卡在 Loading
-========================= */
 
 function withTimeout(promise, timeoutMs, fallbackValue) {
   return Promise.race([
     promise,
     new Promise((resolve) => {
-      setTimeout(() => resolve(fallbackValue), timeoutMs);
+      setTimeout(
+        () => resolve(fallbackValue),
+        timeoutMs
+      );
     })
   ]);
 }
 
 function cloudGetItem(key) {
   return new Promise((resolve) => {
-    if (!isTG || !tg.CloudStorage) {
+    if (!tg || !tg.CloudStorage) {
       resolve(null);
       return;
     }
 
     try {
-      tg.CloudStorage.getItem(key, (error, value) => {
-        if (error) {
-          console.error("CloudStorage getItem failed:", error);
-          resolve(null);
-          return;
-        }
+      tg.CloudStorage.getItem(
+        key,
+        (error, value) => {
+          if (error) {
+            console.error(
+              "CloudStorage getItem failed:",
+              error
+            );
+            resolve(null);
+            return;
+          }
 
-        resolve(value || null);
-      });
+          resolve(value || null);
+        }
+      );
     } catch (error) {
-      console.error("CloudStorage getItem exception:", error);
+      console.error(
+        "CloudStorage getItem exception:",
+        error
+      );
       resolve(null);
     }
   });
@@ -364,48 +599,50 @@ function cloudGetItem(key) {
 
 function cloudSetItem(key, value) {
   return new Promise((resolve) => {
-    if (!isTG || !tg.CloudStorage) {
+    if (!tg || !tg.CloudStorage) {
       resolve(false);
       return;
     }
 
     try {
-      tg.CloudStorage.setItem(key, value, (error) => {
-        if (error) {
-          console.error("CloudStorage setItem failed:", error);
-          resolve(false);
-          return;
-        }
+      tg.CloudStorage.setItem(
+        key,
+        value,
+        (error) => {
+          if (error) {
+            console.error(
+              "CloudStorage setItem failed:",
+              error
+            );
+            resolve(false);
+            return;
+          }
 
-        resolve(true);
-      });
+          resolve(true);
+        }
+      );
     } catch (error) {
-      console.error("CloudStorage setItem exception:", error);
+      console.error(
+        "CloudStorage setItem exception:",
+        error
+      );
       resolve(false);
     }
   });
 }
 
 async function loadState() {
-  /*
-    先读本机，保证按钮不会因为 Telegram 云端无响应而永久锁住。
-  */
   const localValue = readLocalBackup();
 
-  if (localValue) {
-    state = normalizeState(localValue);
-  } else {
-    state = normalizeState(defaultState);
-  }
+  state = normalizeState(
+    localValue || defaultState
+  );
 
   refreshPeriodIfNeeded();
   stateLoaded = true;
   writeLocalBackup(state);
   updateUI();
 
-  /*
-    再尝试云端同步；最多等待 2.5 秒。
-  */
   try {
     const cloudRaw = await withTimeout(
       cloudGetItem(CLOUD_KEY),
@@ -414,27 +651,32 @@ async function loadState() {
     );
 
     if (cloudRaw) {
-      const cloudValue = normalizeState(JSON.parse(cloudRaw));
+      const cloudValue =
+        normalizeState(JSON.parse(cloudRaw));
 
-      /*
-        以较严格的状态为准，避免重新开启后恢复已用次数。
-      */
       state = {
-        periodStartedAt: Math.max(
-          state.periodStartedAt,
-          cloudValue.periodStartedAt
-        ),
-        freeSpinsRemaining: Math.min(
-          state.freeSpinsRemaining,
-          cloudValue.freeSpinsRemaining
-        ),
-        bonusSpins: Math.min(
-          state.bonusSpins,
-          cloudValue.bonusSpins
-        ),
+        periodStartedAt:
+          Math.max(
+            state.periodStartedAt,
+            cloudValue.periodStartedAt
+          ),
+
+        freeSpinsRemaining:
+          Math.min(
+            state.freeSpinsRemaining,
+            cloudValue.freeSpinsRemaining
+          ),
+
+        bonusSpins:
+          Math.min(
+            state.bonusSpins,
+            cloudValue.bonusSpins
+          ),
+
         subscribedBonusUsed:
           state.subscribedBonusUsed ||
           cloudValue.subscribedBonusUsed,
+
         sharedBonusUsed:
           state.sharedBonusUsed ||
           cloudValue.sharedBonusUsed
@@ -453,18 +695,17 @@ async function saveState() {
   saving = true;
   updateUI();
 
-  const cleanState = normalizeState(state);
-  state = cleanState;
+  state = normalizeState(state);
 
-  const localSaved = writeLocalBackup(cleanState);
+  const localSaved =
+    writeLocalBackup(state);
 
-  /*
-    本机储存成功就继续转盘。
-    云端失败不再让按钮卡死或还原成不能转。
-  */
-  if (isTG && tg.CloudStorage) {
+  if (tg && tg.CloudStorage) {
     await withTimeout(
-      cloudSetItem(CLOUD_KEY, JSON.stringify(cleanState)),
+      cloudSetItem(
+        CLOUD_KEY,
+        JSON.stringify(state)
+      ),
       CLOUD_TIMEOUT_MS,
       false
     );
@@ -478,42 +719,63 @@ async function saveState() {
   }
 }
 
-/* =========================
-   次数与倒数
-========================= */
-
 function totalChances() {
-  return state.freeSpinsRemaining + state.bonusSpins;
+  return (
+    state.freeSpinsRemaining +
+    state.bonusSpins
+  );
 }
 
-function fmtDuration(ms) {
-  const seconds = Math.max(0, Math.floor(ms / 1000));
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  const pad = (number) => String(number).padStart(2, "0");
+function formatDuration(ms) {
+  const totalSeconds =
+    Math.max(0, Math.floor(ms / 1000));
+
+  const days =
+    Math.floor(totalSeconds / 86400);
+
+  const hours =
+    Math.floor(
+      (totalSeconds % 86400) / 3600
+    );
+
+  const minutes =
+    Math.floor(
+      (totalSeconds % 3600) / 60
+    );
+
+  const seconds =
+    totalSeconds % 60;
+
+  const pad = (value) =>
+    String(value).padStart(2, "0");
 
   return (
-    (days > 0 ? days + "d " : "") +
-    pad(hours) + ":" +
-    pad(minutes) + ":" +
-    pad(secs)
+    (days > 0 ? `${days}d ` : "") +
+    `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
   );
 }
 
 function updateUI() {
-  if (stateLoaded && refreshPeriodIfNeeded()) {
+  if (
+    stateLoaded &&
+    refreshPeriodIfNeeded()
+  ) {
     writeLocalBackup(state);
   }
 
-  chancesEl.textContent = stateLoaded ? String(totalChances()) : "0";
+  chancesEl.textContent =
+    stateLoaded
+      ? String(totalChances())
+      : "0";
 
   if (!stateLoaded) {
     spinBtn.disabled = true;
-    spinBtn.textContent = "读取中 / Loading...";
-    cooldownEl.hidden = false;
-    cooldownEl.textContent = "读取中 / Loading...";
+    spinBtn.textContent =
+      "读取中 / Loading...";
+
+    cooldownEl.innerHTML =
+      "读取中 / Loading...";
+
     subBtn.disabled = true;
     shareBtn.disabled = true;
     return;
@@ -525,350 +787,488 @@ function updateUI() {
     totalChances() <= 0;
 
   if (spinning) {
-    spinBtn.textContent = "抽奖中 / Spinning...";
+    spinBtn.textContent =
+      "抽奖中 / Spinning...";
   } else if (saving) {
-    spinBtn.textContent = "储存中 / Saving...";
+    spinBtn.textContent =
+      "储存中 / Saving...";
   } else if (totalChances() <= 0) {
-    spinBtn.textContent = "暂无次数 / No chances";
+    spinBtn.textContent =
+      "暂无次数 / No chances";
   } else {
-    spinBtn.textContent = "开始抽奖 / Start";
+    spinBtn.textContent =
+      "开始抽奖 / Start";
   }
 
-  subBtn.disabled = saving || state.subscribedBonusUsed;
-  shareBtn.disabled = saving || state.sharedBonusUsed;
+  subBtn.disabled =
+    saving ||
+    spinning ||
+    state.subscribedBonusUsed;
 
-  subBtn.textContent = state.subscribedBonusUsed
-    ? "✅ 已领取 / Claimed"
-    : "🔗 订阅 / Subscribe（+1）";
+  shareBtn.disabled =
+    saving ||
+    spinning ||
+    state.sharedBonusUsed;
 
-  shareBtn.textContent = state.sharedBonusUsed
-    ? "✅ 已领取 / Claimed"
-    : "🔗 分享 / Share（+1）";
+  subBtn.textContent =
+    state.subscribedBonusUsed
+      ? "✅ 已领取 / Claimed"
+      : "🔗 订阅 / Subscribe (+1)";
 
-  if (state.freeSpinsRemaining <= 0) {
-    const remainMs =
-      COOLDOWN_MS -
-      (Date.now() - state.periodStartedAt);
+  shareBtn.textContent =
+    state.sharedBonusUsed
+      ? "✅ 已领取 / Claimed"
+      : "🔗 分享 / Share (+1)";
 
-    cooldownEl.hidden = false;
-    cooldownEl.textContent =
-      "下次免费次数恢复 / Free spins reset in: " +
-      fmtDuration(remainMs);
-  } else {
-    cooldownEl.hidden = true;
-    cooldownEl.textContent = "";
-  }
+  const remainMs =
+    COOLDOWN_MS -
+    (Date.now() - state.periodStartedAt);
+
+  cooldownEl.innerHTML =
+    "下次免费次数恢复 / Free spins reset in: " +
+    `<span class="time">${formatDuration(remainMs)}</span>`;
 }
 
 setInterval(updateUI, 1000);
 
-/* =========================
-   绘制转盘
-========================= */
+function selectWeightedPrize() {
+  const totalWeight =
+    weightedPrizes.reduce(
+      (sum, item) => sum + item.weight,
+      0
+    );
 
-function drawWheel(angleOffset = 0) {
-  const cx = 210;
-  const cy = 210;
-  const radius = 200;
-  const numberOfPrizes = prizes.length;
-  const arc = (2 * Math.PI) / numberOfPrizes;
+  let random =
+    Math.random() * totalWeight;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  for (let i = 0; i < numberOfPrizes; i++) {
-    const start = i * arc + angleOffset;
-    const end = start + arc;
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, radius, start, end);
-    ctx.closePath();
-    ctx.fillStyle = colors[i];
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(start + arc / 2);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#000";
-
-    const text = prizes[i];
-    const maxWidth = Math.min(120, radius * arc * 0.7);
-    const textRadius = radius - 48;
-    let fontSize = 18;
-
-    ctx.font = `bold ${fontSize}px Arial, "Noto Sans SC", sans-serif`;
-
-    while (ctx.measureText(text).width > maxWidth && fontSize > 12) {
-      fontSize--;
-      ctx.font = `bold ${fontSize}px Arial, "Noto Sans SC", sans-serif`;
+  for (const item of weightedPrizes) {
+    if (random < item.weight) {
+      return item.result;
     }
 
-    ctx.fillText(text, textRadius, 0);
-    ctx.restore();
+    random -= item.weight;
   }
+
+  return "Sorry 😢";
 }
 
-drawWheel();
+function choosePrizeIndex(result) {
+  const matches = [];
 
-/* =========================
-   抽奖
-========================= */
+  prizes.forEach((prize, index) => {
+    if (prize === result) {
+      matches.push(index);
+    }
+  });
 
-spinBtn.addEventListener("click", async () => {
-  if (!stateLoaded || spinning || saving) return;
+  return matches[
+    Math.floor(Math.random() * matches.length)
+  ];
+}
 
-  refreshPeriodIfNeeded();
+function targetRotationForIndex(index) {
+  const segment = 360 / prizes.length;
+  const segmentCenter =
+    index * segment + segment / 2;
 
-  if (totalChances() <= 0) {
-    showMessage("目前没有抽奖次数。\nNo chances available.");
-    return;
-  }
+  const targetModulo =
+    ((360 - segmentCenter) % 360 + 360) % 360;
 
-  spinning = true;
+  const currentModulo =
+    ((currentRotation % 360) + 360) % 360;
 
-  /*
-    记录本次扣的是哪一种次数，储存失败时可正确还原。
-  */
-  let consumedType = "";
+  let delta =
+    ((targetModulo - currentModulo) % 360 + 360) % 360;
 
-  if (state.bonusSpins > 0) {
-    state.bonusSpins--;
-    consumedType = "bonus";
-  } else {
-    state.freeSpinsRemaining--;
-    consumedType = "free";
-  }
+  delta += 360 * 6;
 
-  updateUI();
+  return currentRotation + delta;
+}
 
-  try {
-    await saveState();
-  } catch (error) {
-    if (consumedType === "bonus") {
-      state.bonusSpins++;
-    } else if (consumedType === "free") {
-      state.freeSpinsRemaining = Math.min(
-        FREE_SPINS_PER_PERIOD,
-        state.freeSpinsRemaining + 1
-      );
+spinBtn.addEventListener(
+  "click",
+  async () => {
+    if (
+      !stateLoaded ||
+      spinning ||
+      saving
+    ) {
+      return;
     }
 
-    spinning = false;
-    writeLocalBackup(state);
+    if (totalChances() <= 0) {
+      showMessage(
+        "目前没有抽奖次数。\nNo chances available."
+      );
+      return;
+    }
+
+    spinning = true;
+
+    let consumedType = "";
+
+    if (state.bonusSpins > 0) {
+      state.bonusSpins--;
+      consumedType = "bonus";
+    } else {
+      state.freeSpinsRemaining--;
+      consumedType = "free";
+    }
+
     updateUI();
 
-    showMessage(
-      "抽奖资料储存失败，请重新开启后再试。\nStorage failed. Please try again."
-    );
-    return;
-  }
+    try {
+      await saveState();
+    } catch (error) {
+      if (consumedType === "bonus") {
+        state.bonusSpins++;
+      } else {
+        state.freeSpinsRemaining =
+          Math.min(
+            FREE_SPINS_PER_PERIOD,
+            state.freeSpinsRemaining + 1
+          );
+      }
 
-  const spinAngle = 360 * 5 + Math.random() * 360;
-  const duration = 4200;
-  const startTime = performance.now();
+      spinning = false;
+      writeLocalBackup(state);
+      updateUI();
 
-  function step(now) {
-    const progress = Math.min((now - startTime) / duration, 1);
-    const ease = 1 - Math.pow(1 - progress, 3);
+      showMessage(
+        "抽奖资料储存失败，请稍后再试。\nStorage failed. Please try again."
+      );
+      return;
+    }
 
-    drawWheel(ease * spinAngle * Math.PI / 180);
+    const selectedResult =
+      selectWeightedPrize();
 
-    if (progress < 1) {
-      requestAnimationFrame(step);
-    } else {
+    const selectedIndex =
+      choosePrizeIndex(selectedResult);
+
+    currentRotation =
+      targetRotationForIndex(selectedIndex);
+
+    wheelShell.style.transform =
+      `rotate(${currentRotation}deg)`;
+
+    setTimeout(() => {
       spinning = false;
       updateUI();
-      onDone(spinAngle);
-    }
+      reportResult(selectedResult);
+    }, 4300);
+  }
+);
+
+function getWebsiteDeviceId() {
+  let value =
+    localStorage.getItem(DEVICE_KEY);
+
+  if (!value) {
+    value =
+      "web_" +
+      Date.now().toString(36) +
+      "_" +
+      Math.random().toString(36).slice(2);
+
+    localStorage.setItem(
+      DEVICE_KEY,
+      value
+    );
   }
 
-  requestAnimationFrame(step);
-});
-
-function onDone(spinAngleDeg) {
-  const count = prizes.length;
-  const arcDeg = 360 / count;
-
-  /*
-    指针位于正上方（-90°），计算最终落点。
-  */
-  const normalized = ((-90 - spinAngleDeg) % 360 + 360) % 360;
-  const index = Math.floor(normalized / arcDeg) % count;
-  const result = prizes[index];
-
-  reportResult(result);
+  return value;
 }
 
-/* =========================
-   传送结果到 Render Bot
-========================= */
-
 async function reportResult(result) {
-  if (!tg || !tg.initData) {
-    console.error("Telegram Mini App initData is unavailable.");
-    showMessage(
-      "抽奖完成，请截图保存结果。\nSpin completed. Please take a screenshot."
-    );
-    return;
-  }
-
   try {
-    const response = await fetch(
-      "https://pcatdolls-auto-channel-bot.onrender.com/wheel-result",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+    const payload = isTG
+      ? {
+          source: "telegram",
           initData: tg.initData,
           result
-        })
-      }
-    );
+        }
+      : {
+          source: "website",
+          websiteDeviceId:
+            getWebsiteDeviceId(),
+          result
+        };
 
-    const responseText = await response.text();
+    const response =
+      await fetch(
+        RESULT_ENDPOINT,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body:
+            JSON.stringify(payload)
+        }
+      );
+
+    const responseText =
+      await response.text();
+
     let responseData;
 
     try {
-      responseData = JSON.parse(responseText);
-    } catch (error) {
-      throw new Error("Render returned an invalid response.");
+      responseData =
+        JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        "Server returned invalid data."
+      );
     }
 
-    if (!response.ok || !responseData.ok) {
-      throw new Error(responseData.error || "Result sending failed.");
+    if (
+      !response.ok ||
+      !responseData.ok
+    ) {
+      throw new Error(
+        responseData.error ||
+        "Result delivery failed."
+      );
     }
 
-    console.log("Wheel result sent successfully:", result);
-
-    setTimeout(() => {
-      try {
-        tg.close();
-      } catch (error) {
-        console.error("Telegram close failed:", error);
-      }
-    }, 700);
+    showResultAndClose(
+      result,
+      false
+    );
   } catch (error) {
-    console.error("Wheel result sending failed:", error);
+    console.error(
+      "Result delivery failed:",
+      error
+    );
 
-    showMessage(
-      "抽奖结果传送失败，请截图保存结果。\nResult sending failed. Please take a screenshot."
+    showResultAndClose(
+      result,
+      true
     );
   }
 }
 
-/* =========================
-   订阅奖励：每个帐号只能领取一次
-========================= */
-
-subBtn.addEventListener("click", async () => {
-  if (!stateLoaded || saving) return;
-
-  if (state.subscribedBonusUsed) {
-    showMessage(
-      "订阅奖励已经领取过。\nSubscribe bonus already claimed."
+function buildResultMessage(
+  result,
+  failed
+) {
+  const statusText = failed
+    ? (
+      "⚠️ 结果传送失败，请务必截图保存。\n" +
+      "Result delivery failed. Please save a screenshot."
+    )
+    : (
+      "请截图保存结果并向客服出示。\n" +
+      "Please take a screenshot and show it to our staff."
     );
-    return;
-  }
 
-  if (isTG) {
+  return (
+`🎉 恭喜中奖 / Congratulations!
+
+🎁 恭喜獲得 / You won:
+${result}
+
+${statusText}
+
+⚠️ 所有奖项不能重叠使用
+All prizes cannot be combined
+
+‼️ 不適用於有 VIP 圖示的女生
+Not valid for girls with the VIP badge
+
+‼️ 優惠必須於一週內使用完成
+Prize must be redeemed within 7 days`
+  );
+}
+
+function showResultAndClose(
+  result,
+  failed = false
+) {
+  const message =
+    buildResultMessage(
+      result,
+      failed
+    );
+
+  if (
+    tg &&
+    typeof tg.showAlert === "function"
+  ) {
     try {
-      tg.openTelegramLink("https://t.me/pcatdolls");
-    } catch (error) {
-      console.error("Telegram link open failed:", error);
-    }
-  } else {
-    window.open("https://t.me/pcatdolls", "_blank", "noopener");
-  }
+      tg.showAlert(
+        message,
+        () => {
+          try {
+            tg.close();
+          } catch (error) {
+            console.error(
+              "Telegram close failed:",
+              error
+            );
+          }
+        }
+      );
 
-  state.subscribedBonusUsed = true;
-  state.bonusSpins++;
-  updateUI();
-
-  try {
-    await saveState();
-    showMessage("已增加一次抽奖机会！\nOne chance added!");
-  } catch (error) {
-    state.subscribedBonusUsed = false;
-    state.bonusSpins = Math.max(0, state.bonusSpins - 1);
-    writeLocalBackup(state);
-    updateUI();
-
-    showMessage(
-      "奖励储存失败，请稍后再试。\nBonus storage failed."
-    );
-  }
-});
-
-/* =========================
-   分享奖励：每个帐号只能领取一次
-========================= */
-
-shareBtn.addEventListener("click", async () => {
-  if (!stateLoaded || saving) return;
-
-  if (state.sharedBonusUsed) {
-    showMessage(
-      "分享奖励已经领取过。\nShare bonus already claimed."
-    );
-    return;
-  }
-
-  const shareUrl =
-    "https://t.me/share/url" +
-    "?url=" +
-    encodeURIComponent("https://t.me/pcatdolls") +
-    "&text=" +
-    encodeURIComponent("PCD Lucky Wheel");
-
-  if (isTG) {
-    try {
-      tg.openTelegramLink(shareUrl);
-    } catch (error) {
-      console.error("Telegram share link failed:", error);
-    }
-  } else {
-    window.open(shareUrl, "_blank", "noopener");
-  }
-
-  state.sharedBonusUsed = true;
-  state.bonusSpins++;
-  updateUI();
-
-  try {
-    await saveState();
-    showMessage("已增加一次抽奖机会！\nOne chance added!");
-  } catch (error) {
-    state.sharedBonusUsed = false;
-    state.bonusSpins = Math.max(0, state.bonusSpins - 1);
-    writeLocalBackup(state);
-    updateUI();
-
-    showMessage(
-      "奖励储存失败，请稍后再试。\nBonus storage failed."
-    );
-  }
-});
-
-function showMessage(message) {
-  if (isTG && typeof tg.showAlert === "function") {
-    try {
-      tg.showAlert(message);
       return;
     } catch (error) {
-      console.error("Telegram alert failed:", error);
+      console.error(
+        "Telegram alert failed:",
+        error
+      );
     }
   }
 
   alert(message);
 }
 
-/* 初始化 */
+subBtn.addEventListener(
+  "click",
+  async () => {
+    if (
+      !stateLoaded ||
+      saving ||
+      state.subscribedBonusUsed
+    ) {
+      return;
+    }
+
+    if (tg) {
+      try {
+        tg.openTelegramLink(
+          "https://t.me/pcatdolls"
+        );
+      } catch (error) {
+        console.error(
+          "Open Telegram link failed:",
+          error
+        );
+      }
+    } else {
+      window.open(
+        "https://t.me/pcatdolls",
+        "_blank",
+        "noopener"
+      );
+    }
+
+    state.subscribedBonusUsed = true;
+    state.bonusSpins++;
+    updateUI();
+
+    try {
+      await saveState();
+
+      showMessage(
+        "已增加一次抽奖机会！\nOne chance added!"
+      );
+    } catch (error) {
+      state.subscribedBonusUsed = false;
+      state.bonusSpins =
+        Math.max(
+          0,
+          state.bonusSpins - 1
+        );
+
+      writeLocalBackup(state);
+      updateUI();
+
+      showMessage(
+        "奖励储存失败，请稍后再试。\nBonus storage failed."
+      );
+    }
+  }
+);
+
+shareBtn.addEventListener(
+  "click",
+  async () => {
+    if (
+      !stateLoaded ||
+      saving ||
+      state.sharedBonusUsed
+    ) {
+      return;
+    }
+
+    const shareUrl =
+      "https://t.me/share/url" +
+      "?url=" +
+      encodeURIComponent(
+        "https://t.me/pcatdolls"
+      ) +
+      "&text=" +
+      encodeURIComponent(
+        "PCD Lucky Wheel"
+      );
+
+    if (tg) {
+      try {
+        tg.openTelegramLink(shareUrl);
+      } catch (error) {
+        console.error(
+          "Share failed:",
+          error
+        );
+      }
+    } else {
+      window.open(
+        shareUrl,
+        "_blank",
+        "noopener"
+      );
+    }
+
+    state.sharedBonusUsed = true;
+    state.bonusSpins++;
+    updateUI();
+
+    try {
+      await saveState();
+
+      showMessage(
+        "已增加一次抽奖机会！\nOne chance added!"
+      );
+    } catch (error) {
+      state.sharedBonusUsed = false;
+      state.bonusSpins =
+        Math.max(
+          0,
+          state.bonusSpins - 1
+        );
+
+      writeLocalBackup(state);
+      updateUI();
+
+      showMessage(
+        "奖励储存失败，请稍后再试。\nBonus storage failed."
+      );
+    }
+  }
+);
+
+function showMessage(message) {
+  if (
+    tg &&
+    typeof tg.showAlert === "function"
+  ) {
+    try {
+      tg.showAlert(message);
+      return;
+    } catch (error) {
+      console.error(
+        "Telegram alert failed:",
+        error
+      );
+    }
+  }
+
+  alert(message);
+}
+
 loadState();
 </script>
-
 </body>
 </html>
